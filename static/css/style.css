@@ -830,12 +830,14 @@ body {
 }
 
 .task-card {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(99, 102, 241, 0.2);
     border-radius: 8px;
     padding: 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
     cursor: grab;
+    backdrop-filter: blur(10px);
 }
 
 .task-card:hover {
@@ -856,7 +858,7 @@ body {
 }
 
 .task-header h4 {
-    color: var(--dark);
+    color: var(--light);
     margin: 0;
     font-size: 1rem;
 }
@@ -1300,6 +1302,16 @@ body {
     .nav-links.active {
         display: flex;
     }
+}
+
+@media (min-width: 769px) {
+    .nav-links {
+        display: flex !important;
+    }
+    
+    .hamburger {
+        display: none;
+    }
     
     .dashboard-container {
         padding: 1rem;
@@ -1344,6 +1356,10 @@ body {
 @media (min-width: 768px) {
     .nav-menu {
         gap: 2rem;
+    }
+    
+    .nav-links {
+        display: flex;
     }
     
     .hero h1 {
