@@ -19,105 +19,84 @@ class Auth {
     async handleLogin(e) {
         e.preventDefault();
         const form = e.target;
-        const container = form.parentElement;
         const submitBtn = form.querySelector('button[type="submit"]');
-        
-        ErrorHandler.clearErrors(container);
         
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         
-        // Client-side validation
-        const errors = FormValidator.validateForm(form, {
-            email: [
-                { type: 'required', message: 'Email is required' },
-                { type: 'email', message: 'Please enter a valid email' }
-            ],
-            password: [
-                { type: 'required', message: 'Password is required' }
-            ]
-        });
-        
-        if (Object.keys(errors).length > 0) {
-            ErrorHandler.showFieldErrors(form, errors);
+        if (!email || !password) {
+            this.showError('Please fill in all fields');
             return;
         }
 
-        ErrorHandler.showLoading(submitBtn, 'Signing in...');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Signing in...';
         
         try {
-            const data = await EnhancedAPI.post('/auth/login', { email, password });
+            const data = await API.post('/auth/login', { email, password });
             
-            if (data.success !== false) {
-                this.setAuth(data.token, data.user);
-                ErrorHandler.showError(container, 'Login successful! Redirecting...', 'success');
-                setTimeout(() => window.location.href = '/dashboard', 1000);
-            }
+            this.setAuth(data.token, data.user);
+            window.location.href = '/dashboard';
         } catch (error) {
-            ErrorHandler.handleApiError(error, container, form);
+            this.showError(error.message || 'Login failed');
         } finally {
-            ErrorHandler.hideLoading(submitBtn);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Sign In';
         }
     }
 
     async handleRegister(e) {
         e.preventDefault();
         const form = e.target;
-        const container = form.parentElement;
         const submitBtn = form.querySelector('button[type="submit"]');
-        
-        ErrorHandler.clearErrors(container);
         
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
 
-        // Client-side validation
-        const errors = FormValidator.validateForm(form, {
-            name: [
-                { type: 'required', message: 'Name is required' }
-            ],
-            email: [
-                { type: 'required', message: 'Email is required' },
-                { type: 'email', message: 'Please enter a valid email' }
-            ],
-            password: [
-                { type: 'required', message: 'Password is required' },
-                { type: 'minLength', value: 6, message: 'Password must be at least 6 characters' }
-            ],
-            confirmPassword: [
-                { type: 'required', message: 'Please confirm your password' },
-                { type: 'match', field: '#password', message: 'Passwords do not match' }
-            ]
-        });
+        if (!name || !email || !password || !confirmPassword) {
+            this.showError('Please fill in all fields');
+            return;
+        }
         
-        if (Object.keys(errors).length > 0) {
-            ErrorHandler.showFieldErrors(form, errors);
+        if (password !== confirmPassword) {
+            this.showError('Passwords do not match');
+            return;
+        }
+        
+        if (password.length < 6) {
+            this.showError('Password must be at least 6 characters');
             return;
         }
 
-        ErrorHandler.showLoading(submitBtn, 'Creating account...');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating account...';
         
         try {
-            const data = await EnhancedAPI.post('/auth/register', { name, email, password });
+            const data = await API.post('/auth/register', { name, email, password });
             
-            if (data.success !== false) {
-                this.setAuth(data.token, data.user);
-                ErrorHandler.showError(container, 'Account created successfully! Redirecting...', 'success');
-                setTimeout(() => window.location.href = '/dashboard', 1000);
-            }
+            this.setAuth(data.token, data.user);
+            window.location.href = '/dashboard';
         } catch (error) {
-            ErrorHandler.handleApiError(error, container, form);
+            this.showError(error.message || 'Registration failed');
         } finally {
-            ErrorHandler.hideLoading(submitBtn);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Account';
         }
     }
 
 
 
-    validateEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    showError(message) {
+        const errorDiv = document.querySelector('.error-message');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 5000);
+        } else {
+            alert(message);
+        }
     }
 
 

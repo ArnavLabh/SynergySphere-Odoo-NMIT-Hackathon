@@ -1,6 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 import logging
+from datetime import datetime
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from .models import db, Project, User, ProjectMember
@@ -16,47 +17,57 @@ logger = logging.getLogger(__name__)
 
 projects_bp = Blueprint('projects', __name__)
 
+@projects_bp.route('/api/test', methods=['GET'])
+def test_endpoint():
+    return jsonify({'message': 'Backend is working', 'timestamp': datetime.now().isoformat()})
+
 @projects_bp.route('/api/projects', methods=['GET'])
 @jwt_required()
-@safe_db_operation("fetch projects")
 def get_projects():
-    user_id = get_jwt_identity()
-    projects = Project.query.filter_by(owner_id=user_id).all()
-    return success_response({
-        'projects': [{
-            'id': p.id,
-            'name': p.name,
-            'description': p.description,
-            'created_at': p.created_at.isoformat()
-        } for p in projects]
-    })
+    try:
+        user_id = get_jwt_identity()
+        projects = Project.query.filter_by(owner_id=user_id).all()
+        return jsonify({
+            'projects': [{
+                'id': p.id,
+                'name': p.name,
+                'description': p.description,
+                'created_at': p.created_at.isoformat()
+            } for p in projects]
+        })
+    except Exception as e:
+        logger.error(f"Get projects error: {e}")
+        return jsonify({'error': 'Failed to fetch projects'}), 500
 
 @projects_bp.route('/api/projects', methods=['POST'])
 @jwt_required()
-@safe_db_operation("create project")
 def create_project():
-    user_id = get_jwt_identity()
-    data = request.get_json()
-    
-    error = validate_json(data, ['name'])
-    if error:
-        return error
-    
-    project = Project(
-        name=data['name'].strip(),
-        description=data.get('description', '').strip(),
-        owner_id=user_id
-    )
-    
-    db.session.add(project)
-    db.session.commit()
-    
-    return created_response({
-        'id': project.id,
-        'name': project.name,
-        'description': project.description,
-        'created_at': project.created_at.isoformat()
-    })
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        if not data or not data.get('name'):
+            return jsonify({'error': 'Project name is required'}), 400
+        
+        project = Project(
+            name=data['name'].strip(),
+            description=data.get('description', '').strip(),
+            owner_id=user_id
+        )
+        
+        db.session.add(project)
+        db.session.commit()
+        
+        return jsonify({
+            'id': project.id,
+            'name': project.name,
+            'description': project.description,
+            'created_at': project.created_at.isoformat()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Project creation error: {e}")
+        return jsonify({'error': 'Failed to create project'}), 500
 
 @projects_bp.route('/api/projects/<int:project_id>', methods=['GET'])
 @jwt_required()

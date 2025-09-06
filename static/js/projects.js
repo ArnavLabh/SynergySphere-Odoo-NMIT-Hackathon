@@ -99,7 +99,25 @@ class Projects {
         submitBtn.textContent = 'Creating...';
         
         try {
-            const result = await API.post('/projects', { name, description });
+            console.log('Auth token:', auth.token);
+            console.log('Creating project with data:', { name, description });
+            
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${auth.token}`
+                },
+                body: JSON.stringify({ name, description })
+            });
+            
+            console.log('Response status:', response.status);
+            const result = await response.json();
+            console.log('Response data:', result);
+            
+            if (!response.ok) {
+                throw new Error(result.error || `HTTP ${response.status}`);
+            }
             
             this.hideCreateModal();
             this.loadProjects();
@@ -108,6 +126,7 @@ class Projects {
                 window.AccessibilityManager.announce('Project created successfully');
             }
         } catch (error) {
+            console.error('Project creation error:', error);
             this.showError(error.message || 'Failed to create project');
         } finally {
             submitBtn.disabled = false;
@@ -160,6 +179,18 @@ class Projects {
             setTimeout(() => errorDiv.style.display = 'none', 5000);
         } else {
             alert(message);
+        }
+    }
+
+    async testBackend() {
+        try {
+            const response = await fetch('/api/test');
+            const result = await response.json();
+            console.log('Backend test result:', result);
+            alert('Backend is working: ' + result.message);
+        } catch (error) {
+            console.error('Backend test failed:', error);
+            alert('Backend test failed: ' + error.message);
         }
     }
 }
