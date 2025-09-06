@@ -40,9 +40,9 @@ class Tasks {
         doneList.innerHTML = '';
 
         // Group tasks by status
-        const todoTasks = this.tasks.filter(task => task.status === 'pending');
+        const todoTasks = this.tasks.filter(task => task.status === 'todo');
         const inProgressTasks = this.tasks.filter(task => task.status === 'in_progress');
-        const doneTasks = this.tasks.filter(task => task.status === 'completed');
+        const doneTasks = this.tasks.filter(task => task.status === 'done');
 
         // Render tasks in each column
         this.renderTaskList(todoList, todoTasks);
@@ -62,15 +62,15 @@ class Tasks {
                     <h4>${task.title}</h4>
                     <div class="task-actions">
                         <select onchange="tasks.updateTaskStatus(${task.id}, this.value)" class="status-select">
-                            <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>To Do</option>
+                            <option value="todo" ${task.status === 'todo' ? 'selected' : ''}>To Do</option>
                             <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                            <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>Done</option>
+                            <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
                         </select>
                     </div>
                 </div>
                 <p class="task-description">${task.description || 'No description'}</p>
                 <div class="task-meta">
-                    ${task.assigned_to ? `<span class="assignee">👤 ${task.assigned_to_name || 'Assigned'}</span>` : ''}
+                    ${task.assignee_id ? `<span class="assignee">👤 ${task.assignee_name || 'Assigned'}</span>` : ''}
                     ${task.due_date ? `<span class="due-date ${this.isOverdue(task.due_date) ? 'overdue' : ''}">${this.formatDate(task.due_date)}</span>` : ''}
                 </div>
             </div>
@@ -121,16 +121,16 @@ class Tasks {
 
     getStatusFromColumn(columnId) {
         const statusMap = {
-            'todoTasks': 'pending',
+            'todoTasks': 'todo',
             'inProgressTasks': 'in_progress',
-            'doneTasks': 'completed'
+            'doneTasks': 'done'
         };
         return statusMap[columnId];
     }
 
     async updateTaskStatus(taskId, newStatus) {
         try {
-            await API.put(`/tasks/${taskId}`, { status: newStatus });
+            await API.patch(`/tasks/${taskId}`, { status: newStatus });
             // Update local task status
             const task = this.tasks.find(t => t.id == taskId);
             if (task) {
@@ -145,7 +145,7 @@ class Tasks {
 
     updateProgress() {
         const totalTasks = this.tasks.length;
-        const completedTasks = this.tasks.filter(task => task.status === 'completed').length;
+        const completedTasks = this.tasks.filter(task => task.status === 'done').length;
         const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
         const progressFill = document.getElementById('progressFill');
@@ -190,7 +190,7 @@ class Tasks {
             await API.post(`/projects/${this.currentProjectId}/tasks`, {
                 title,
                 description,
-                assigned_to: assignedTo || null,
+                assignee_id: assignedTo || null,
                 due_date: dueDate || null
             });
             this.hideCreateModal();

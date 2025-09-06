@@ -3,17 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - SynergySphere</title>
+    <title>Page Not Found - SynergySphere</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="hero">
+    <div class="floating-spheres">
+        <div class="floating-sphere sphere-1"></div>
+        <div class="floating-sphere sphere-2"></div>
+        <div class="floating-sphere sphere-3"></div>
+    </div>
+    
+    <main class="error-container">
+        <div class="error-card">
             <div class="sphere-animation"></div>
             <h1>404</h1>
-            <p>Page not found</p>
-            <a href="/" class="card">← Back to Home</a>
+            <h2>Page Not Found</h2>
+            <p>The page you're looking for doesn't exist or has been moved.</p>
+            <div class="error-actions">
+                <a href="/" class="btn-primary">Go Home</a>
+                <a href="/dashboard" class="btn-outline">Dashboard</a>
+            </div>
         </div>
-    </div>
+    </main>
+
+    <script src="/static/js/auth.js"></script>
 </body>
 </html>

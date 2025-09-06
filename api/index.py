@@ -28,7 +28,7 @@ jwt = JWTManager(app)
 db.init_app(app)
 
 # Import models after db initialization
-from .models import User, Project, Task, Discussion
+from .models import User, Project, Task, Message, ProjectMember
 
 # Import and register blueprints
 from .auth import auth_bp
@@ -43,7 +43,11 @@ app.register_blueprint(messages_bp)
 
 # Create tables
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+        print("Database tables created successfully")
+    except Exception as e:
+        print(f"Error creating tables: {e}")
 
 @app.route('/')
 def index():
@@ -64,6 +68,10 @@ def dashboard():
 @app.route('/profile')
 def profile():
     return render_template('profile.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 @app.route('/api/health')
 def api_health_check():

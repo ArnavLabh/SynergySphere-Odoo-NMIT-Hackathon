@@ -47,6 +47,13 @@ class API {
         });
     }
 
+    static async patch(endpoint, data) {
+        return this.request(endpoint, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+    }
+
     static async delete(endpoint) {
         return this.request(endpoint, {
             method: 'DELETE'

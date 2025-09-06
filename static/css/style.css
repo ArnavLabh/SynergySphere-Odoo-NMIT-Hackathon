@@ -950,6 +950,67 @@ body {
     align-items: center;
 }
 
+/* Error Pages */
+.error-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.error-card {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius);
+    padding: 4rem;
+    text-align: center;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    max-width: 500px;
+}
+
+.error-card h1 {
+    font-size: 6rem;
+    color: var(--primary);
+    margin: 0;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.error-card h2 {
+    color: var(--light);
+    margin: 1rem 0;
+    font-size: 2rem;
+}
+
+.error-card p {
+    color: var(--gray);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.about-content {
+    padding: 4rem 0;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
 /* Profile Page */
 .profile-container {
     min-height: 80vh;

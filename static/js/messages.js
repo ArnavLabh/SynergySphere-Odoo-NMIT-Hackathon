@@ -50,7 +50,7 @@ class Messages {
                     <span class="message-author">${message.user_name || 'Unknown User'}</span>
                     <span class="message-time">${this.formatTime(message.created_at)}</span>
                 </div>
-                <div class="message-content">${this.escapeHtml(message.message)}</div>
+                <div class="message-content">${this.escapeHtml(message.content)}</div>
             </div>
         `).join('');
 
@@ -67,7 +67,7 @@ class Messages {
         if (!message) return;
 
         try {
-            await API.post(`/projects/${this.currentProjectId}/messages`, { message });
+            await API.post(`/projects/${this.currentProjectId}/messages`, { content: message });
             messageInput.value = '';
             this.loadMessages(this.currentProjectId);
         } catch (error) {
