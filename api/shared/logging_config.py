@@ -57,17 +57,8 @@ def setup_logging(app):
     console_handler.setFormatter(formatter)
     console_handler.setLevel(logging.INFO)
     
-    # File handler for errors
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
-    
-    error_handler = logging.FileHandler('logs/error.log')
-    error_handler.setFormatter(formatter)
-    error_handler.setLevel(logging.ERROR)
-    
-    # Add handlers
+    # Add handlers (console only for serverless)
     app.logger.addHandler(console_handler)
-    app.logger.addHandler(error_handler)
     app.logger.setLevel(logging.INFO)
     
     # Configure root logger
