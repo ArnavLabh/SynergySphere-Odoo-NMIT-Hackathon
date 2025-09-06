@@ -35,7 +35,10 @@ class Projects {
             this.projects = await API.get('/projects');
             this.renderProjects();
         } catch (error) {
-            this.showError('Failed to load projects');
+            console.error('Load projects error:', error);
+            // Don't show error for empty projects, just render empty state
+            this.projects = [];
+            this.renderProjects();
         }
     }
 

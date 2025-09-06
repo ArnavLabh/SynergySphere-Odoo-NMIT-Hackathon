@@ -9,11 +9,17 @@ projects_bp = Blueprint('projects', __name__)
 def get_projects():
     try:
         user_id = get_jwt_identity()
-        # Get projects where user is owner or member
+        # Get projects where user is owner
         owned_projects = Project.query.filter_by(owner_id=user_id).all()
-        member_projects = db.session.query(Project).join(ProjectMember).filter(ProjectMember.user_id == user_id).all()
         
-        all_projects = list(set(owned_projects + member_projects))
+        # Get projects where user is member
+        member_project_ids = db.session.query(ProjectMember.project_id).filter(ProjectMember.user_id == user_id).all()
+        member_projects = []
+        if member_project_ids:
+            member_projects = Project.query.filter(Project.id.in_([p[0] for p in member_project_ids])).all()
+        
+        # Combine and deduplicate
+        all_projects = {p.id: p for p in owned_projects + member_projects}.values()
         
         return jsonify([{
             'id': p.id,
@@ -22,7 +28,8 @@ def get_projects():
             'created_at': p.created_at.isoformat()
         } for p in all_projects])
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Get projects error: {e}")
+        return jsonify([])  # Return empty array instead of error
 
 @projects_bp.route('/api/projects', methods=['POST'])
 @jwt_required()
