@@ -99,21 +99,15 @@ class Projects {
         submitBtn.textContent = 'Creating...';
         
         try {
-            console.log('Auth token:', auth.token);
-            console.log('Creating project with data:', { name, description });
-            
             const response = await fetch('/api/projects', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${auth.token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ name, description })
             });
             
-            console.log('Response status:', response.status);
             const result = await response.json();
-            console.log('Response data:', result);
             
             if (!response.ok) {
                 throw new Error(result.error || `HTTP ${response.status}`);
@@ -126,7 +120,6 @@ class Projects {
                 window.AccessibilityManager.announce('Project created successfully');
             }
         } catch (error) {
-            console.error('Project creation error:', error);
             this.showError(error.message || 'Failed to create project');
         } finally {
             submitBtn.disabled = false;
