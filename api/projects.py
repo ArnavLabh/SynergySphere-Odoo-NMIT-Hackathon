@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from .models import db, Project, User, ProjectMember
@@ -8,11 +8,7 @@ from .pagination import get_pagination_params, format_pagination_response
 from .serializers import serialize_project
 from .shared.db_operations import safe_db_operation
 from .shared.response_helpers import success_response, error_response, not_found_response, access_denied_response, created_response
-=======
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from .models import db, Project, User
->>>>>>> 814556137c3fe120be1064d5fb4a8fdcfbf1c108
+
 
 projects_bp = Blueprint('projects', __name__)
 
@@ -20,18 +16,6 @@ projects_bp = Blueprint('projects', __name__)
 @jwt_required()
 @safe_db_operation("fetch projects")
 def get_projects():
-<<<<<<< HEAD
-    user_id = get_jwt_identity()
-    page, per_page = get_pagination_params(default_per_page=20)
-    
-    projects_query = get_user_projects_query(user_id)
-    projects_paginated = projects_query.paginate(page=page, per_page=per_page, error_out=False)
-    
-    response = format_pagination_response(projects_paginated, 'projects')
-    response['projects'] = [serialize_project(p) for p in projects_paginated.items]
-    
-    return success_response(response)
-=======
     try:
         user_id = get_jwt_identity()
         projects = Project.query.filter_by(owner_id=user_id).all()
@@ -43,36 +27,11 @@ def get_projects():
         } for p in projects])
     except Exception as e:
         return jsonify({'error': 'Failed to fetch projects'}), 500
->>>>>>> 814556137c3fe120be1064d5fb4a8fdcfbf1c108
 
 @projects_bp.route('/api/projects', methods=['POST'])
 @jwt_required()
 @safe_db_operation("create project")
 def create_project():
-<<<<<<< HEAD
-    user_id = get_jwt_identity()
-    data = request.get_json()
-    
-    error = validate_json(data, ['name'])
-    if error:
-        return error
-    
-    project = Project(
-        name=data['name'].strip(),
-        description=data.get('description', '').strip(),
-        owner_id=user_id
-    )
-    
-    db.session.add(project)
-    db.session.commit()
-    
-    return created_response({
-        'id': project.id,
-        'name': project.name,
-        'description': project.description,
-        'created_at': project.created_at.isoformat()
-    })
-=======
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
@@ -101,13 +60,11 @@ def create_project():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Failed to create project'}), 500
->>>>>>> 814556137c3fe120be1064d5fb4a8fdcfbf1c108
 
 @projects_bp.route('/api/projects/<int:project_id>', methods=['GET'])
 @jwt_required()
 @safe_db_operation("fetch project")
 def get_project(project_id):
-<<<<<<< HEAD
     user_id = get_jwt_identity()
     project = Project.query.get(project_id)
     
@@ -176,20 +133,3 @@ def add_member(project_id):
         db.session.rollback()
         logger.error(f"Unexpected error adding member to project {project_id}: {e}")
         return jsonify({'error': 'Failed to add member'}), 500
-=======
-    try:
-        user_id = get_jwt_identity()
-        project = Project.query.filter_by(id=project_id, owner_id=user_id).first()
-        
-        if not project:
-            return jsonify({'error': 'Project not found'}), 404
-        
-        return jsonify({
-            'id': project.id,
-            'name': project.name,
-            'description': project.description,
-            'created_at': project.created_at.isoformat()
-        })
-    except Exception as e:
-        return jsonify({'error': 'Failed to fetch project'}), 500
->>>>>>> 814556137c3fe120be1064d5fb4a8fdcfbf1c108
