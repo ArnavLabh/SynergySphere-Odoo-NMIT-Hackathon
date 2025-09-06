@@ -21,11 +21,14 @@ class Messages {
         this.currentProjectId = projectId;
         
         try {
-            this.messages = await API.get(`/projects/${projectId}/messages`);
+            const response = await API.get(`/projects/${projectId}/messages`);
+            this.messages = response.messages || [];
             this.renderMessages();
             this.startPolling();
         } catch (error) {
-            this.showError('Failed to load messages');
+            console.error('Failed to load messages:', error);
+            this.messages = [];
+            this.renderMessages();
         }
     }
 

@@ -28,6 +28,10 @@ def register_routes(app):
     def projects_page():
         return render_template('projects.html')
     
+    @app.route('/projects/<int:project_id>')
+    def project_detail(project_id):
+        return render_template('project_detail.html')
+    
     @app.route('/tasks')
     def tasks_page():
         return render_template('tasks.html')

@@ -19,11 +19,14 @@ class Tasks {
     async loadTasks(projectId) {
         this.currentProjectId = projectId;
         try {
-            this.tasks = await API.get(`/projects/${projectId}/tasks`);
+            const response = await API.get(`/projects/${projectId}/tasks`);
+            this.tasks = response.tasks || [];
             this.renderTasks();
             this.updateProgress();
         } catch (error) {
-            this.showError('Failed to load tasks');
+            console.error('Failed to load tasks:', error);
+            this.tasks = [];
+            this.renderTasks();
         }
     }
 

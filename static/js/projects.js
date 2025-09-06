@@ -99,19 +99,8 @@ class Projects {
         submitBtn.textContent = 'Creating...';
         
         try {
-            const response = await fetch('/api/projects', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ name, description })
-            });
-            
-            const result = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(result.error || `HTTP ${response.status}`);
-            }
+            // Use API class which includes authentication headers
+            const result = await API.post('/projects', { name, description });
             
             this.hideCreateModal();
             this.loadProjects();
