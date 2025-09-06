@@ -9,6 +9,7 @@ from .pagination import get_pagination_params, format_pagination_response
 from .serializers import serialize_task
 from .shared.db_operations import safe_db_operation
 from .shared.response_helpers import success_response, not_found_response, created_response
+from .notifications import notify_task_assignment, notify_task_status_change
 
 tasks_bp = Blueprint('tasks', __name__)
 
@@ -63,6 +64,10 @@ def create_task(project_id):
     db.session.add(task)
     db.session.commit()
     
+    # Send notification if task is assigned
+    if task.assignee_id:
+        notify_task_assignment(task, task.assignee_id)
+    
     return created_response(serialize_task(task))
 
 @tasks_bp.route('/api/tasks/<int:task_id>', methods=['PATCH'])
@@ -81,6 +86,9 @@ def update_task(task_id):
     
     data = request.get_json()
     
+    old_status = task.status
+    old_assignee = task.assignee_id
+    
     if 'status' in data:
         task.status = data['status']
     if 'title' in data:
@@ -96,5 +104,12 @@ def update_task(task_id):
     
     task.updated_at = utc_now()
     db.session.commit()
+    
+    # Send notifications for changes
+    if 'status' in data and old_status != task.status:
+        notify_task_status_change(task, old_status, user_id)
+    
+    if 'assignee_id' in data and old_assignee != task.assignee_id and task.assignee_id:
+        notify_task_assignment(task, task.assignee_id)
     
     return success_response(serialize_task(task))

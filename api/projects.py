@@ -11,6 +11,7 @@ from .pagination import get_pagination_params, format_pagination_response
 from .serializers import serialize_project
 from .shared.db_operations import safe_db_operation
 from .shared.response_helpers import success_response, error_response, not_found_response, access_denied_response, created_response
+from .notifications import notify_project_member_added
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +128,11 @@ def add_member(project_id):
         
         db.session.add(member)
         db.session.commit()
+        
+        # Get the name of the user who added the member
+        adder = User.query.get(user_id)
+        if adder:
+            notify_project_member_added(project_id, user.id, adder.name)
         
         return jsonify({'message': 'Member added successfully'})
     except IntegrityError as e:

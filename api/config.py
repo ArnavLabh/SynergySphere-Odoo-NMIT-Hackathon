@@ -9,11 +9,12 @@ class Config:
     @staticmethod
     def get_database_uri():
         database_url = os.getenv('POSTGRES_URL', os.getenv('DATABASE_URL'))
-        if not database_url:
-            raise ValueError('POSTGRES_URL environment variable is required')
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql://', 1)
-        return database_url
+        if database_url:
+            if database_url.startswith('postgres://'):
+                database_url = database_url.replace('postgres://', 'postgresql://', 1)
+            return database_url
+        # Use SQLite for local development if no PostgreSQL URL is provided
+        return 'sqlite:///synergysphere.db'
 
 class DevelopmentConfig(Config):
     DEBUG = True

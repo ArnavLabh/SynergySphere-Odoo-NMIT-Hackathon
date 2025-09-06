@@ -29,12 +29,16 @@ def create_app(config_name=None):
     from .projects import projects_bp
     from .tasks import tasks_bp
     from .messages import messages_bp
+    from .notifications import notifications_bp
+    from .dashboard import dashboard_bp
     from .client_errors import client_errors_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(projects_bp)
     app.register_blueprint(tasks_bp)
     app.register_blueprint(messages_bp)
+    app.register_blueprint(notifications_bp)
+    app.register_blueprint(dashboard_bp)
     app.register_blueprint(client_errors_bp)
     
     # Register routes
