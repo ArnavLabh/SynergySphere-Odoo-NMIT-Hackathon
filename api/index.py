@@ -1,14 +1,22 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 from database import create_app, init_database
 from models import db
+from auth import auth_bp
 
 # Create Flask app with database configuration
 app = create_app()
 CORS(app)
 
+# Initialize JWT
+jwt = JWTManager(app)
+
 # Initialize database
 db = init_database(app)
+
+# Register blueprints
+app.register_blueprint(auth_bp)
 
 @app.route('/')
 def health_check():
