@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - SynergySphere</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">SynergySphere</div>
+        <div class="nav-menu" id="navMenu">
+            <div class="hamburger" id="hamburger">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="nav-links" id="navLinks">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/profile" class="active">Profile</a>
+                <button onclick="auth.logout()" class="btn-outline">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="profile-container">
+            <div class="profile-card">
+                <div class="sphere-animation"></div>
+                <h1>User Profile</h1>
+                
+                <div class="profile-info">
+                    <div class="info-group">
+                        <label>Name</label>
+                        <p id="userName">Loading...</p>
+                    </div>
+                    <div class="info-group">
+                        <label>Email</label>
+                        <p id="userEmail">Loading...</p>
+                    </div>
+                    <div class="info-group">
+                        <label>Member Since</label>
+                        <p id="memberSince">Loading...</p>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <a href="/dashboard" class="btn-primary">Back to Dashboard</a>
+                    <button onclick="auth.logout()" class="btn-outline">Logout</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/js/auth.js"></script>
+    <script>
+        // Initialize profile
+        if (!auth.isAuthenticated()) {
+            window.location.href = '/login';
+        } else {
+            document.getElementById('userName').textContent = auth.user?.name || 'Unknown';
+            document.getElementById('userEmail').textContent = auth.user?.email || 'Unknown';
+            document.getElementById('memberSince').textContent = 'Recently';
+            
+            // Setup mobile menu
+            const hamburger = document.getElementById('hamburger');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (hamburger && navLinks) {
+                hamburger.addEventListener('click', () => {
+                    navLinks.classList.toggle('active');
+                    hamburger.classList.toggle('active');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

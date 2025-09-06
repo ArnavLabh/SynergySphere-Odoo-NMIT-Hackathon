@@ -1,28 +1,67 @@
+import os
 from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from database import create_app, init_database
-from models import db
-from auth import auth_bp
+from flask_sqlalchemy import SQLAlchemy
 
-# Create Flask app with database configuration
-app = create_app()
+# Initialize extensions
+db = SQLAlchemy()
+
+# Create Flask app
+app = Flask(__name__, template_folder='../templates', static_folder='../static')
+
+# Configuration
+database_url = os.getenv('POSTGRES_URL', os.getenv('DATABASE_URL', 'sqlite:///synergysphere.db'))
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
+
+# Initialize extensions
 CORS(app)
-
-# Initialize JWT
 jwt = JWTManager(app)
+db.init_app(app)
 
-# Initialize database
-db = init_database(app)
+# Import models after db initialization
+from .models import User, Project, Task, Discussion
 
-# Register blueprints
+# Import and register blueprints
+from .auth import auth_bp
+from .projects import projects_bp
+from .tasks import tasks_bp
+from .messages import messages_bp
+
 app.register_blueprint(auth_bp)
-from projects import projects_bp
 app.register_blueprint(projects_bp)
+app.register_blueprint(tasks_bp)
+app.register_blueprint(messages_bp)
+
+# Create tables
+with app.app_context():
+    db.create_all()
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+@app.route('/register')
+def register():
+    return render_template('register.html')
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
 
 @app.route('/api/health')
 def api_health_check():
