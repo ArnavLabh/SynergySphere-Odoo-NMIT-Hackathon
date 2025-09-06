@@ -8,7 +8,12 @@ def create_app():
     app = Flask(__name__)
     
     # Database configuration
-    database_url = os.getenv('DATABASE_URL', 'sqlite:///synergysphere.db')
+    database_url = os.getenv('POSTGRES_URL', os.getenv('DATABASE_URL'))
+    if not database_url:
+        raise ValueError('POSTGRES_URL environment variable is required')
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')

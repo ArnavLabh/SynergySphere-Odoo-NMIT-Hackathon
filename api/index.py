@@ -11,7 +11,9 @@ db = SQLAlchemy()
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
 
 # Configuration
-database_url = os.getenv('POSTGRES_URL', os.getenv('DATABASE_URL', 'sqlite:///synergysphere.db'))
+database_url = os.getenv('POSTGRES_URL', os.getenv('DATABASE_URL'))
+if not database_url:
+    raise ValueError('POSTGRES_URL environment variable is required')
 if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
