@@ -240,6 +240,10 @@ def add_member(project_id):
         db.session.rollback()
         logger.error(f"Database error adding member to project {project_id}: {e}")
         return jsonify({'error': 'Failed to add member'}), 500
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Unexpected error adding member to project {project_id}: {e}")
+        return jsonify({'error': 'Failed to add member'}), 500
 
 @projects_bp.route('/api/projects/<int:project_id>/members/<int:member_id>', methods=['DELETE'])
 @jwt_required()
@@ -268,7 +272,3 @@ def remove_member(project_id, member_id):
     db.session.commit()
     
     return success_response({'message': 'Member removed successfully'})
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Unexpected error adding member to project {project_id}: {e}")
-        return jsonify({'error': 'Failed to add member'}), 500
