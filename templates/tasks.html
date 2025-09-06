@@ -4,367 +4,105 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tasks - SynergySphere</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --primary-color: #6366f1;
-            --secondary-color: #8b5cf6;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --todo-color: #94a3b8;
-            --progress-color: #f59e0b;
-            --done-color: #10b981;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .navbar {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        .kanban-container {
-            padding: 2rem;
-        }
-        
-        .kanban-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        
-        .kanban-board {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            min-height: 500px;
-        }
-        
-        .kanban-column {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 1.5rem;
-            min-height: 400px;
-        }
-        
-        .column-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        
-        .column-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .column-count {
-            background: #f3f4f6;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-        
-        .task-list {
-            min-height: 300px;
-            padding: 0.5rem 0;
-        }
-        
-        .task-card {
-            background: white;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            cursor: move;
-            transition: all 0.3s ease;
-        }
-        
-        .task-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-        
-        .task-card.dragging {
-            opacity: 0.5;
-        }
-        
-        .task-title {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: #1f2937;
-        }
-        
-        .task-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 0.75rem;
-        }
-        
-        .task-assignee {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        
-        .task-due {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        
-        .task-due.overdue {
-            color: var(--danger-color);
-            font-weight: 500;
-        }
-        
-        .task-priority {
-            display: inline-block;
-            width: 4px;
-            height: 100%;
-            position: absolute;
-            left: 0;
-            top: 0;
-            border-radius: 10px 0 0 10px;
-        }
-        
-        .priority-high {
-            background: var(--danger-color);
-        }
-        
-        .priority-medium {
-            background: var(--warning-color);
-        }
-        
-        .priority-low {
-            background: var(--success-color);
-        }
-        
-        .column-todo .column-title {
-            color: var(--todo-color);
-        }
-        
-        .column-progress .column-title {
-            color: var(--progress-color);
-        }
-        
-        .column-done .column-title {
-            color: var(--done-color);
-        }
-        
-        .drag-over {
-            background: rgba(99, 102, 241, 0.1);
-            border: 2px dashed var(--primary-color);
-        }
-        
-        .btn-primary-custom {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            border: none;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary-custom:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
-        }
-        
-        .filter-bar {
-            background: white;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #9ca3af;
-        }
-        
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-    </style>
+    <link rel="icon" type="image/png" href="/static/img/logo.png">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
-                <i class="bi bi-hexagon-fill text-primary"></i> SynergySphere
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/projects">Projects</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/tasks">Tasks</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/profile">Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="logout()">Logout</a>
-                    </li>
-                </ul>
-            </div>
+    <div class="floating-spheres">
+        <div class="floating-sphere sphere-1"></div>
+        <div class="floating-sphere sphere-2"></div>
+        <div class="floating-sphere sphere-3"></div>
+    </div>
+    
+    <nav class="navbar">
+        <div class="nav-brand">
+            <img src="/static/img/logo.png" alt="SynergySphere Logo" class="nav-logo">
+            SynergySphere
+        </div>
+        <div class="nav-menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/projects">Projects</a>
+            <a href="/tasks" style="color: var(--accent);">Tasks</a>
+            <a href="/profile">Profile</a>
+            <a href="#" onclick="logout()" class="btn-outline">Logout</a>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="kanban-container">
-        <!-- Header -->
-        <div class="kanban-header">
-            <h1 class="text-white">Task Board</h1>
-            <button class="btn btn-primary-custom" onclick="openCreateTaskModal()">
-                <i class="bi bi-plus-circle"></i> New Task
-            </button>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1>Task Board</h1>
+            <button class="btn-primary" onclick="openCreateTaskModal()">+ New Task</button>
         </div>
 
-        <!-- Filter Bar -->
-        <div class="filter-bar">
-            <select class="form-select" id="projectFilter" onchange="filterTasks()">
+        <div class="form-group" style="margin-bottom: 2rem; display: flex; gap: 1rem; max-width: 800px;">
+            <select id="projectFilter" onchange="filterTasks()">
                 <option value="">All Projects</option>
             </select>
-            <select class="form-select" id="assigneeFilter" onchange="filterTasks()">
+            <select id="assigneeFilter" onchange="filterTasks()">
                 <option value="">All Assignees</option>
                 <option value="me">My Tasks</option>
             </select>
-            <select class="form-select" id="priorityFilter" onchange="filterTasks()">
+            <select id="priorityFilter" onchange="filterTasks()">
                 <option value="">All Priorities</option>
                 <option value="high">High Priority</option>
                 <option value="medium">Medium Priority</option>
                 <option value="low">Low Priority</option>
             </select>
-            <button class="btn btn-outline-secondary" onclick="clearFilters()">
-                <i class="bi bi-x-circle"></i> Clear Filters
-            </button>
+            <button class="btn-outline" onclick="clearFilters()">Clear Filters</button>
         </div>
 
-        <!-- Kanban Board -->
-        <div class="kanban-board">
-            <!-- To Do Column -->
-            <div class="kanban-column column-todo">
-                <div class="column-header">
-                    <h3 class="column-title">
-                        <i class="bi bi-circle"></i> To Do
-                    </h3>
-                    <span class="column-count" id="todoCount">0</span>
-                </div>
-                <div class="task-list" id="todoList" data-status="todo">
-                    <!-- Tasks will be loaded here -->
-                </div>
+        <div class="tasks-board">
+            <div class="task-column">
+                <h4>📋 To Do <span id="todoCount" style="background: var(--gray); color: var(--light); padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-left: 0.5rem;">0</span></h4>
+                <div class="task-list" id="todoList" data-status="todo"></div>
             </div>
-
-            <!-- In Progress Column -->
-            <div class="kanban-column column-progress">
-                <div class="column-header">
-                    <h3 class="column-title">
-                        <i class="bi bi-arrow-clockwise"></i> In Progress
-                    </h3>
-                    <span class="column-count" id="progressCount">0</span>
-                </div>
-                <div class="task-list" id="progressList" data-status="in_progress">
-                    <!-- Tasks will be loaded here -->
-                </div>
+            <div class="task-column">
+                <h4>⏳ In Progress <span id="progressCount" style="background: var(--gray); color: var(--light); padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-left: 0.5rem;">0</span></h4>
+                <div class="task-list" id="progressList" data-status="in_progress"></div>
             </div>
-
-            <!-- Done Column -->
-            <div class="kanban-column column-done">
-                <div class="column-header">
-                    <h3 class="column-title">
-                        <i class="bi bi-check-circle-fill"></i> Done
-                    </h3>
-                    <span class="column-count" id="doneCount">0</span>
-                </div>
-                <div class="task-list" id="doneList" data-status="done">
-                    <!-- Tasks will be loaded here -->
-                </div>
+            <div class="task-column">
+                <h4>✅ Done <span id="doneCount" style="background: var(--gray); color: var(--light); padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-left: 0.5rem;">0</span></h4>
+                <div class="task-list" id="doneList" data-status="done"></div>
             </div>
         </div>
     </div>
 
-    <!-- Create Task Modal -->
-    <div class="modal fade" id="createTaskModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create New Task</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal" id="createTaskModal">
+        <div class="modal-content">
+            <h3>Create New Task</h3>
+            <form id="createTaskForm">
+                <div class="form-group">
+                    <select id="taskProject" required>
+                        <option value="">Select Project</option>
+                    </select>
                 </div>
-                <div class="modal-body">
-                    <form id="createTaskForm">
-                        <div class="mb-3">
-                            <label for="taskProject" class="form-label">Project</label>
-                            <select class="form-select" id="taskProject" required>
-                                <option value="">Select Project</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="taskTitle" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="taskTitle" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="taskDescription" class="form-label">Description</label>
-                            <textarea class="form-control" id="taskDescription" rows="3"></textarea>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="taskPriority" class="form-label">Priority</label>
-                                <select class="form-select" id="taskPriority">
-                                    <option value="low">Low</option>
-                                    <option value="medium" selected>Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="taskDueDate" class="form-label">Due Date</label>
-                                <input type="date" class="form-control" id="taskDueDate">
-                            </div>
-                        </div>
-                    </form>
+                <div class="form-group">
+                    <input type="text" id="taskTitle" placeholder="Task Title" required>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary-custom" onclick="createTask()">Create</button>
+                <div class="form-group">
+                    <textarea id="taskDescription" placeholder="Task Description" rows="3"></textarea>
                 </div>
-            </div>
+                <div class="form-group">
+                    <select id="taskPriority">
+                        <option value="low">Low Priority</option>
+                        <option value="medium" selected>Medium Priority</option>
+                        <option value="high">High Priority</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="date" id="taskDueDate">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-outline" onclick="closeCreateTaskModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Task</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/notifications.js"></script>
     <script>
         let allTasks = [];
         let projects = [];
@@ -470,42 +208,36 @@
 
             // Add empty states
             if (todoCount === 0) {
-                todoList.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><p>No tasks to do</p></div>';
+                todoList.innerHTML = '<div class="empty-column">No tasks to do</div>';
             }
             if (progressCount === 0) {
-                progressList.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><p>No tasks in progress</p></div>';
+                progressList.innerHTML = '<div class="empty-column">No tasks in progress</div>';
             }
             if (doneCount === 0) {
-                doneList.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><p>No completed tasks</p></div>';
+                doneList.innerHTML = '<div class="empty-column">No completed tasks</div>';
             }
         }
 
         function createTaskCard(task) {
             const card = document.createElement('div');
-            card.className = 'task-card position-relative';
+            card.className = 'task-card';
             card.draggable = true;
             card.dataset.taskId = task.id;
             card.dataset.projectId = task.project_id;
             
-            const priorityClass = `priority-${task.priority || 'medium'}`;
             const dueDate = task.due_date ? new Date(task.due_date) : null;
             const isOverdue = dueDate && dueDate < new Date() && task.status !== 'done';
+            const priorityEmoji = task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢';
             
             card.innerHTML = `
-                <div class="task-priority ${priorityClass}"></div>
-                <div class="task-title">${task.title}</div>
-                ${task.description ? `<p class="text-muted small mb-2">${task.description}</p>` : ''}
+                <div class="task-header">
+                    <h4>${task.title}</h4>
+                    <span>${priorityEmoji}</span>
+                </div>
+                ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
                 <div class="task-meta">
-                    <div class="task-assignee">
-                        <i class="bi bi-person-circle"></i>
-                        <span>${task.assignee_name || 'Unassigned'}</span>
-                    </div>
-                    ${dueDate ? `
-                        <div class="task-due ${isOverdue ? 'overdue' : ''}">
-                            <i class="bi bi-calendar"></i>
-                            ${dueDate.toLocaleDateString()}
-                        </div>
-                    ` : ''}
+                    <div class="assignee">${task.assignee_name || 'Unassigned'}</div>
+                    ${dueDate ? `<div class="due-date ${isOverdue ? 'overdue' : ''}">${dueDate.toLocaleDateString()}</div>` : ''}
                 </div>
             `;
             
@@ -575,12 +307,28 @@
                         
                         // Update counts
                         updateColumnCounts();
+                        
+                        // Show notification
+                        if (window.notifications) {
+                            const taskTitle = draggedElement.querySelector('h4').textContent;
+                            window.notifications.taskUpdated(taskTitle, newStatus);
+                        }
                     } else {
-                        alert('Failed to update task status');
+                        const errorMsg = 'Failed to update task status';
+                        if (window.notifications) {
+                            window.notifications.error(errorMsg);
+                        } else {
+                            alert(errorMsg);
+                        }
                     }
                 } catch (error) {
                     console.error('Error updating task:', error);
-                    alert('Failed to update task');
+                    const errorMsg = 'Failed to update task';
+                    if (window.notifications) {
+                        window.notifications.error(errorMsg);
+                    } else {
+                        alert(errorMsg);
+                    }
                 }
             }
         }
@@ -596,11 +344,18 @@
         }
 
         function openCreateTaskModal() {
-            const modal = new bootstrap.Modal(document.getElementById('createTaskModal'));
-            modal.show();
+            document.getElementById('createTaskModal').style.display = 'flex';
+        }
+        
+        function closeCreateTaskModal() {
+            document.getElementById('createTaskModal').style.display = 'none';
+            document.getElementById('createTaskForm').reset();
         }
 
-        async function createTask() {
+        // Handle form submission
+        document.getElementById('createTaskForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
             const projectId = document.getElementById('taskProject').value;
             const title = document.getElementById('taskTitle').value;
             const description = document.getElementById('taskDescription').value;
@@ -608,7 +363,11 @@
             const dueDate = document.getElementById('taskDueDate').value;
 
             if (!projectId || !title.trim()) {
-                alert('Please select a project and enter a title');
+                if (window.notifications) {
+                    window.notifications.error('Please select a project and enter a title');
+                } else {
+                    alert('Please select a project and enter a title');
+                }
                 return;
             }
 
@@ -629,19 +388,30 @@
                 });
 
                 if (response.ok) {
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('createTaskModal'));
-                    modal.hide();
-                    document.getElementById('createTaskForm').reset();
+                    closeCreateTaskModal();
                     loadAllTasks();
+                    if (window.notifications) {
+                        window.notifications.success(`Task "${title}" created successfully!`);
+                    }
                 } else {
                     const error = await response.json();
-                    alert(error.error || 'Failed to create task');
+                    const errorMsg = error.error || 'Failed to create task';
+                    if (window.notifications) {
+                        window.notifications.error(errorMsg);
+                    } else {
+                        alert(errorMsg);
+                    }
                 }
             } catch (error) {
                 console.error('Error creating task:', error);
-                alert('Failed to create task');
+                const errorMsg = 'Failed to create task';
+                if (window.notifications) {
+                    window.notifications.error(errorMsg);
+                } else {
+                    alert(errorMsg);
+                }
             }
-        }
+        });
 
         function filterTasks() {
             const projectFilter = document.getElementById('projectFilter').value;
@@ -675,8 +445,16 @@
 
         function logout() {
             localStorage.removeItem('token');
+            localStorage.removeItem('user');
             window.location.href = '/login';
         }
+        
+        // Close modal when clicking outside
+        document.getElementById('createTaskModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCreateTaskModal();
+            }
+        });
     </script>
 </body>
 </html>
