@@ -1,99 +1,21 @@
 #!/usr/bin/env python3
 """
-Database migration script for SynergySphere
-Run this script to create all database tables and indexes
+Database seeding script for SynergySphere
+Use this to populate the database with sample data
 """
 
-from database import create_app, init_database
-from models import db, User, Project, ProjectMember, Task, Message
-import os
 import sys
-
-def create_tables():
-    """Create all database tables"""
-    print("Creating database tables...")
-    
-    try:
-        # Create Flask app
-        app = create_app()
-        
-        with app.app_context():
-            # Initialize database
-            db = init_database(app)
-            
-            print("✓ Database tables created successfully!")
-            
-            # Print table information
-            inspector = db.inspect(db.engine)
-            tables = inspector.get_table_names()
-            
-            print(f"\nCreated tables ({len(tables)}):")
-            for table in sorted(tables):
-                print(f"  - {table}")
-                
-            print("\n✓ Database migration completed successfully!")
-            
-    except Exception as e:
-        print(f"❌ Error creating tables: {str(e)}")
-        sys.exit(1)
-
-def drop_tables():
-    """Drop all database tables (use with caution!)"""
-    print("⚠️  WARNING: This will delete all data!")
-    confirmation = input("Are you sure you want to drop all tables? (type 'yes' to confirm): ")
-    
-    if confirmation.lower() != 'yes':
-        print("Operation cancelled.")
-        return
-    
-    try:
-        app = create_app()
-        
-        with app.app_context():
-            db = init_database(app)
-            db.drop_all()
-            print("✓ All tables dropped successfully!")
-            
-    except Exception as e:
-        print(f"❌ Error dropping tables: {str(e)}")
-        sys.exit(1)
-
-def reset_database():
-    """Reset the database by dropping and recreating all tables"""
-    print("Resetting database...")
-    
-    try:
-        app = create_app()
-        
-        with app.app_context():
-            db = init_database(app)
-            
-            # Drop all tables
-            print("Dropping existing tables...")
-            db.drop_all()
-            
-            # Create all tables
-            print("Creating new tables...")
-            db.create_all()
-            
-            print("✓ Database reset completed successfully!")
-            
-    except Exception as e:
-        print(f"❌ Error resetting database: {str(e)}")
-        sys.exit(1)
+from app import app
+from api.models import db, User, Project, ProjectMember, Task, Message
+from werkzeug.security import generate_password_hash
 
 def seed_database():
     """Seed the database with sample data"""
     print("Seeding database with sample data...")
     
-    try:
-        app = create_app()
-        
-        with app.app_context():
-            db = init_database(app)
-            
+    with app.app_context():
+        try:
             # Create sample users
-            from werkzeug.security import generate_password_hash
             
             admin_user = User(
                 name="Admin User",
@@ -157,30 +79,9 @@ def seed_database():
             print(f"  - Created task: {sample_task.title}")
             print(f"  - Created message: Sample welcome message")
             
-    except Exception as e:
-        print(f"❌ Error seeding database: {str(e)}")
-        sys.exit(1)
+        except Exception as e:
+            print(f"❌ Error seeding database: {str(e)}")
+            sys.exit(1)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("Usage: python migrate.py [create|drop|reset|seed]")
-        print("Commands:")
-        print("  create - Create all database tables")
-        print("  drop   - Drop all database tables")
-        print("  reset  - Drop and recreate all tables")
-        print("  seed   - Add sample data to database")
-        sys.exit(1)
-    
-    command = sys.argv[1].lower()
-    
-    if command == 'create':
-        create_tables()
-    elif command == 'drop':
-        drop_tables()
-    elif command == 'reset':
-        reset_database()
-    elif command == 'seed':
-        seed_database()
-    else:
-        print(f"Unknown command: {command}")
-        sys.exit(1)
+    seed_database()
