@@ -10,12 +10,13 @@ Our goal is simple: help teams **stay aligned, work smarter, and achieve more** 
 
 ## 🎥 Demo Video
 👉 *(Placeholder – Add link after recording demo video)*  
-`[![Watch the Demo](https://img.youtube.com/vi/VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=VIDEO_ID)`  
+`![Watch the Demo](https://www.youtube.com/watch?v=VIDEO_ID)`  
 
 ---
 
 ## 🗄️ Database Design
-👉 *(Placeholder – Add ER Diagram / Schema image here)*  
+
+![ER Diagram](static/img/er-diagram.png)
 
 ---
 
