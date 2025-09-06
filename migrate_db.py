@@ -1,36 +1,42 @@
 #!/usr/bin/env python3
 """
-Database migration script for SynergySphere
-Run this to create/update database tables with PostgreSQL
+Database initialization script for SynergySphere
+Use Flask-Migrate for proper database migrations
 """
 
-import os
-from api.index import app, db
+from app import app
+from api.models import db
 
-def migrate_database():
-    """Create or update database tables"""
+def init_database():
+    """Initialize database connection and verify setup"""
+    
     with app.app_context():
         try:
-            # Create all tables
-            db.create_all()
-            print("✅ PostgreSQL database tables created successfully!")
-            
-            # Verify connection
+            # Test database connection
             result = db.session.execute('SELECT version()').fetchone()
-            print(f"📋 Connected to: {result[0]}")
+            print(f"✅ Connected to: {result[0]}")
+            
+            # Check if tables exist
+            inspector = db.inspect(db.engine)
+            tables = inspector.get_table_names()
+            
+            if tables:
+                print(f"📋 Found {len(tables)} tables: {', '.join(sorted(tables))}")
+            else:
+                print("⚠️  No tables found. Run 'flask db upgrade' to create tables.")
+            
+            return True
             
         except Exception as e:
-            print(f"❌ Error creating database tables: {e}")
+            print(f"❌ Database connection error: {e}")
             return False
-    
-    return True
 
 if __name__ == '__main__':
-    print("🚀 Starting PostgreSQL database migration...")
-    success = migrate_database()
+    print("🚀 Checking database connection...")
+    success = init_database()
     
     if success:
-        print("✨ Migration completed successfully!")
+        print("✨ Database check completed!")
     else:
-        print("💥 Migration failed!")
+        print("💥 Database check failed!")
         exit(1)

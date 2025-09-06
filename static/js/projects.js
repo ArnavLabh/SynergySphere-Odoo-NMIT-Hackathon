@@ -35,7 +35,10 @@ class Projects {
             this.projects = await API.get('/projects');
             this.renderProjects();
         } catch (error) {
-            this.showError('Failed to load projects');
+            console.error('Load projects error:', error);
+            // Don't show error for empty projects, just render empty state
+            this.projects = [];
+            this.renderProjects();
         }
     }
 
@@ -82,14 +85,22 @@ class Projects {
     async handleCreateProject(e) {
         e.preventDefault();
         
-        const name = document.getElementById('projectName').value;
-        const description = document.getElementById('projectDescription').value;
+        const name = document.getElementById('projectName').value.trim();
+        const description = document.getElementById('projectDescription').value.trim();
+
+        if (!name) {
+            this.showError('Project name is required');
+            return;
+        }
 
         try {
-            await API.post('/projects', { name, description });
+            console.log('Creating project:', { name, description });
+            const result = await API.post('/projects', { name, description });
+            console.log('Project created:', result);
             this.hideCreateModal();
             this.loadProjects();
         } catch (error) {
+            console.error('Project creation error:', error);
             this.showError(error.message || 'Failed to create project');
         }
     }

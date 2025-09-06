@@ -1,20 +1,20 @@
 from flask import Blueprint, request, jsonify
+import logging
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from .models import db, Task, Project, User, ProjectMember
-from datetime import datetime
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import joinedload
+from .models import db, Task
+from .validation import validate_json
+from .utils import utc_now, parse_datetime
+from .permissions import require_project_access
+from .pagination import get_pagination_params, format_pagination_response
+from .serializers import serialize_task
+
+logger = logging.getLogger(__name__)
 
 tasks_bp = Blueprint('tasks', __name__)
 
-def check_project_access(project_id, user_id):
-    """Check if user has access to project"""
-    project = Project.query.get(project_id)
-    if not project:
-        return False
-    
-    is_owner = project.owner_id == user_id
-    is_member = ProjectMember.query.filter_by(project_id=project_id, user_id=user_id).first()
-    
-    return is_owner or is_member
+
 
 @tasks_bp.route('/api/projects/<int:project_id>/tasks', methods=['GET'])
 @jwt_required()
@@ -22,25 +22,25 @@ def get_tasks(project_id):
     try:
         user_id = get_jwt_identity()
         
-        if not check_project_access(project_id, user_id):
-            return jsonify({'error': 'Access denied'}), 403
+        access_error = require_project_access(project_id, user_id)
+        if access_error:
+            return access_error
         
-        tasks = Task.query.filter_by(project_id=project_id).all()
+        page, per_page = get_pagination_params(default_per_page=20)
         
-        return jsonify([{
-            'id': task.id,
-            'title': task.title,
-            'description': task.description,
-            'status': task.status,
-            'assignee_id': task.assignee_id,
-            'assignee_name': User.query.get(task.assignee_id).name if task.assignee_id else None,
-            'due_date': task.due_date.isoformat() if task.due_date else None,
-            'priority': task.priority,
-            'created_at': task.created_at.isoformat(),
-            'updated_at': task.updated_at.isoformat()
-        } for task in tasks])
+        tasks_query = Task.query.options(joinedload(Task.assignee)).filter_by(project_id=project_id)
+        tasks_paginated = tasks_query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        response = format_pagination_response(tasks_paginated, 'tasks')
+        response['tasks'] = [serialize_task(task) for task in tasks_paginated.items]
+        
+        return jsonify(response)
+    except SQLAlchemyError as e:
+        logger.error(f"Database error fetching tasks for project {project_id}: {e}")
+        return jsonify({'error': 'Failed to fetch tasks'}), 500
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Unexpected error fetching tasks for project {project_id}: {e}")
+        return jsonify({'error': 'Failed to fetch tasks'}), 500
 
 @tasks_bp.route('/api/projects/<int:project_id>/tasks', methods=['POST'])
 @jwt_required()
@@ -48,17 +48,22 @@ def create_task(project_id):
     try:
         user_id = get_jwt_identity()
         
-        if not check_project_access(project_id, user_id):
-            return jsonify({'error': 'Access denied'}), 403
+        access_error = require_project_access(project_id, user_id)
+        if access_error:
+            return access_error
         
         data = request.get_json()
+        
+        error = validate_json(data, ['title'])
+        if error:
+            return error
         
         task = Task(
             project_id=project_id,
             title=data['title'],
             description=data.get('description', ''),
             assignee_id=data.get('assignee_id'),
-            due_date=datetime.fromisoformat(data['due_date']) if data.get('due_date') else None,
+            due_date=parse_datetime(data.get('due_date')),
             priority=data.get('priority', 'medium'),
             status=data.get('status', 'todo')
         )
@@ -66,20 +71,18 @@ def create_task(project_id):
         db.session.add(task)
         db.session.commit()
         
-        return jsonify({
-            'id': task.id,
-            'title': task.title,
-            'description': task.description,
-            'status': task.status,
-            'assignee_id': task.assignee_id,
-            'due_date': task.due_date.isoformat() if task.due_date else None,
-            'priority': task.priority,
-            'created_at': task.created_at.isoformat(),
-            'updated_at': task.updated_at.isoformat()
-        }), 201
+        return jsonify(serialize_task(task)), 201
+    except ValueError as e:
+        logger.error(f"Invalid date format in task creation: {e}")
+        return jsonify({'error': 'Invalid date format'}), 400
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.error(f"Database error creating task for project {project_id}: {e}")
+        return jsonify({'error': 'Failed to create task'}), 500
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Unexpected error creating task for project {project_id}: {e}")
+        return jsonify({'error': 'Failed to create task'}), 500
 
 @tasks_bp.route('/api/tasks/<int:task_id>', methods=['PATCH'])
 @jwt_required()
@@ -91,8 +94,9 @@ def update_task(task_id):
         if not task:
             return jsonify({'error': 'Task not found'}), 404
         
-        if not check_project_access(task.project_id, user_id):
-            return jsonify({'error': 'Access denied'}), 403
+        access_error = require_project_access(task.project_id, user_id)
+        if access_error:
+            return access_error
         
         data = request.get_json()
         
@@ -105,24 +109,22 @@ def update_task(task_id):
         if 'assignee_id' in data:
             task.assignee_id = data['assignee_id']
         if 'due_date' in data:
-            task.due_date = datetime.fromisoformat(data['due_date']) if data['due_date'] else None
+            task.due_date = parse_datetime(data.get('due_date'))
         if 'priority' in data:
             task.priority = data['priority']
         
-        task.updated_at = datetime.utcnow()
+        task.updated_at = utc_now()
         db.session.commit()
         
-        return jsonify({
-            'id': task.id,
-            'title': task.title,
-            'description': task.description,
-            'status': task.status,
-            'assignee_id': task.assignee_id,
-            'due_date': task.due_date.isoformat() if task.due_date else None,
-            'priority': task.priority,
-            'created_at': task.created_at.isoformat(),
-            'updated_at': task.updated_at.isoformat()
-        })
+        return jsonify(serialize_task(task))
+    except ValueError as e:
+        logger.error(f"Invalid date format in task update: {e}")
+        return jsonify({'error': 'Invalid date format'}), 400
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.error(f"Database error updating task {task_id}: {e}")
+        return jsonify({'error': 'Failed to update task'}), 500
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Unexpected error updating task {task_id}: {e}")
+        return jsonify({'error': 'Failed to update task'}), 500

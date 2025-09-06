@@ -16,9 +16,16 @@ class API {
 
         try {
             const response = await fetch(url, config);
+            
+            // Handle empty response
+            if (response.status === 204) {
+                return null;
+            }
+            
             const data = await response.json();
             
             if (!response.ok) {
+                console.error(`API Error ${response.status}:`, data);
                 throw new Error(data.error || `HTTP ${response.status}`);
             }
             

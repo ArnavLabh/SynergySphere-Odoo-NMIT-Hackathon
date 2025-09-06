@@ -61,6 +61,14 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Database files
+*.db
+*.sqlite
+
+# Migrations - include migration files but exclude cache
+migrations/__pycache__/
+migrations/versions/__pycache__/
+
 # Flask stuff:
 instance/
 .webassets-cache
