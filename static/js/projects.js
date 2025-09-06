@@ -105,11 +105,20 @@ class Projects {
             this.hideCreateModal();
             this.loadProjects();
             
+            // Show success notification
+            if (window.notifications) {
+                window.notifications.projectCreated(name);
+            }
+            
             if (window.AccessibilityManager) {
                 window.AccessibilityManager.announce('Project created successfully');
             }
         } catch (error) {
-            this.showError(error.message || 'Failed to create project');
+            const errorMsg = error.message || 'Failed to create project';
+            this.showError(errorMsg);
+            if (window.notifications) {
+                window.notifications.error(errorMsg);
+            }
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Create Project';
@@ -159,6 +168,11 @@ class Projects {
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
             setTimeout(() => errorDiv.style.display = 'none', 5000);
+        }
+        
+        // Also show notification if available
+        if (window.notifications) {
+            window.notifications.error(message);
         } else {
             alert(message);
         }
