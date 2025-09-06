@@ -22,10 +22,23 @@ def test_endpoint():
     return jsonify({'message': 'Backend is working', 'timestamp': datetime.now().isoformat()})
 
 @projects_bp.route('/api/projects', methods=['GET'])
-@jwt_required()
 def get_projects():
     try:
-        user_id = get_jwt_identity()
+        # Check for Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing or invalid authorization header'}), 401
+        
+        # Extract and decode token
+        token = auth_header.split(' ')[1]
+        from flask_jwt_extended import decode_token
+        try:
+            decoded = decode_token(token)
+            user_id = decoded['sub']
+        except Exception as jwt_error:
+            logger.error(f"JWT decode error: {jwt_error}")
+            return jsonify({'error': 'Invalid token'}), 401
+        
         projects = Project.query.filter_by(owner_id=user_id).all()
         return jsonify({
             'projects': [{
@@ -40,11 +53,29 @@ def get_projects():
         return jsonify({'error': 'Failed to fetch projects'}), 500
 
 @projects_bp.route('/api/projects', methods=['POST'])
-@jwt_required()
 def create_project():
     try:
-        user_id = get_jwt_identity()
+        # Check for Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing or invalid authorization header'}), 401
+        
+        # Extract token
+        token = auth_header.split(' ')[1]
+        logger.info(f"Received token: {token[:20]}...")
+        
+        # Verify JWT manually for debugging
+        from flask_jwt_extended import decode_token
+        try:
+            decoded = decode_token(token)
+            user_id = decoded['sub']
+            logger.info(f"Decoded user_id: {user_id}")
+        except Exception as jwt_error:
+            logger.error(f"JWT decode error: {jwt_error}")
+            return jsonify({'error': 'Invalid token'}), 401
+        
         data = request.get_json()
+        logger.info(f"Request data: {data}")
         
         if not data or not data.get('name'):
             return jsonify({'error': 'Project name is required'}), 400
@@ -57,6 +88,7 @@ def create_project():
         
         db.session.add(project)
         db.session.commit()
+        logger.info(f"Project created successfully: {project.id}")
         
         return jsonify({
             'id': project.id,
@@ -67,7 +99,7 @@ def create_project():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Project creation error: {e}")
-        return jsonify({'error': 'Failed to create project'}), 500
+        return jsonify({'error': f'Failed to create project: {str(e)}'}), 500
 
 @projects_bp.route('/api/projects/<int:project_id>', methods=['GET'])
 @jwt_required()
