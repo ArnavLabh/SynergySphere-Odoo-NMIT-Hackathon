@@ -1,7 +1,7 @@
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.orm import joinedload
-from .models import db, Task
+from .models import db, Task, Project
 from .validation import validate_json
 from .utils import utc_now, parse_datetime
 from .permissions import require_project_access
@@ -12,6 +12,28 @@ from .shared.response_helpers import success_response, not_found_response, creat
 from .notifications import notify_task_assignment, notify_task_status_change
 
 tasks_bp = Blueprint('tasks', __name__)
+
+@tasks_bp.route('/api/tasks/my-tasks', methods=['GET'])
+@jwt_required()
+@safe_db_operation("fetch my tasks")
+def get_my_tasks():
+    """Get all tasks assigned to the current user across all projects"""
+    user_id = get_jwt_identity()
+    
+    page, per_page = get_pagination_params(default_per_page=50)
+    
+    # Get all tasks assigned to this user
+    tasks_query = Task.query.options(
+        joinedload(Task.assignee),
+        joinedload(Task.project)
+    ).filter_by(assignee_id=user_id).order_by(Task.due_date.asc(), Task.created_at.desc())
+    
+    tasks_paginated = tasks_query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    response = format_pagination_response(tasks_paginated, 'tasks')
+    response['tasks'] = [serialize_task(task) for task in tasks_paginated.items]
+    
+    return success_response(response)
 
 
 
@@ -113,3 +135,27 @@ def update_task(task_id):
         notify_task_assignment(task, task.assignee_id)
     
     return success_response(serialize_task(task))
+
+@tasks_bp.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+@jwt_required()
+@safe_db_operation("delete task")
+def delete_task(task_id):
+    user_id = get_jwt_identity()
+    task = Task.query.get(task_id)
+    
+    if not task:
+        return not_found_response("Task")
+    
+    # Check if user has access to the project
+    access_error = require_project_access(task.project_id, user_id)
+    if access_error:
+        return access_error
+    
+    # Delete related notifications
+    from .models import Notification
+    Notification.query.filter_by(related_task_id=task_id).delete()
+    
+    db.session.delete(task)
+    db.session.commit()
+    
+    return success_response({'message': 'Task deleted successfully'})

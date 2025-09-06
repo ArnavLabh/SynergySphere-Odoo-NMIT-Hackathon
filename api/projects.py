@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from .models import db, Project, User, ProjectMember
+from .models import db, Project, User, ProjectMember, Task, Message, Notification
 from .validation import validate_json
 from .query_utils import get_user_projects_query
 from .pagination import get_pagination_params, format_pagination_response
@@ -91,6 +91,105 @@ def get_project(project_id):
         'created_at': project.created_at.isoformat()
     })
 
+@projects_bp.route('/api/projects/<int:project_id>', methods=['PUT'])
+@jwt_required()
+@safe_db_operation("update project")
+def update_project(project_id):
+    user_id = get_jwt_identity()
+    project = Project.query.get(project_id)
+    
+    if not project:
+        return not_found_response("Project")
+    
+    # Only owner can update project
+    if project.owner_id != user_id:
+        return access_denied_response()
+    
+    data = request.get_json()
+    
+    if 'name' in data:
+        project.name = data['name'].strip()
+    if 'description' in data:
+        project.description = data['description'].strip()
+    
+    db.session.commit()
+    
+    return success_response({
+        'id': project.id,
+        'name': project.name,
+        'description': project.description,
+        'created_at': project.created_at.isoformat()
+    })
+
+@projects_bp.route('/api/projects/<int:project_id>', methods=['DELETE'])
+@jwt_required()
+@safe_db_operation("delete project")
+def delete_project(project_id):
+    user_id = get_jwt_identity()
+    project = Project.query.get(project_id)
+    
+    if not project:
+        return not_found_response("Project")
+    
+    # Only owner can delete project
+    if project.owner_id != user_id:
+        return access_denied_response()
+    
+    # Delete all related data
+    ProjectMember.query.filter_by(project_id=project_id).delete()
+    Task.query.filter_by(project_id=project_id).delete()
+    Message.query.filter_by(project_id=project_id).delete()
+    Notification.query.filter_by(related_project_id=project_id).delete()
+    
+    db.session.delete(project)
+    db.session.commit()
+    
+    return success_response({'message': 'Project deleted successfully'})
+
+@projects_bp.route('/api/projects/<int:project_id>/members', methods=['GET'])
+@jwt_required()
+@safe_db_operation("get project members")
+def get_project_members(project_id):
+    user_id = get_jwt_identity()
+    project = Project.query.get(project_id)
+    
+    if not project:
+        return not_found_response("Project")
+    
+    # Check if user has access to this project
+    is_owner = project.owner_id == user_id
+    is_member = ProjectMember.query.filter_by(project_id=project_id, user_id=user_id).first()
+    
+    if not (is_owner or is_member):
+        return access_denied_response()
+    
+    # Get all members
+    members = db.session.query(User, ProjectMember).join(
+        ProjectMember, User.id == ProjectMember.user_id
+    ).filter(ProjectMember.project_id == project_id).all()
+    
+    # Add owner to the list
+    owner = User.query.get(project.owner_id)
+    
+    member_list = [{
+        'id': owner.id,
+        'name': owner.name,
+        'email': owner.email,
+        'role': 'owner',
+        'is_owner': True
+    }]
+    
+    for user, member in members:
+        member_list.append({
+            'id': user.id,
+            'name': user.name,
+            'email': user.email,
+            'role': member.role,
+            'is_owner': False
+        })
+    
+    return success_response({'members': member_list})
+
 @projects_bp.route('/api/projects/<int:project_id>/members', methods=['POST'])
 @jwt_required()
 def add_member(project_id):
@@ -141,6 +240,34 @@ def add_member(project_id):
         db.session.rollback()
         logger.error(f"Database error adding member to project {project_id}: {e}")
         return jsonify({'error': 'Failed to add member'}), 500
+
+@projects_bp.route('/api/projects/<int:project_id>/members/<int:member_id>', methods=['DELETE'])
+@jwt_required()
+@safe_db_operation("remove project member")
+def remove_member(project_id, member_id):
+    user_id = get_jwt_identity()
+    project = Project.query.get(project_id)
+    
+    if not project:
+        return not_found_response("Project")
+    
+    # Only owner can remove members
+    if project.owner_id != user_id:
+        return access_denied_response()
+    
+    # Cannot remove the owner
+    if member_id == project.owner_id:
+        return error_response('Cannot remove project owner', 400)
+    
+    member = ProjectMember.query.filter_by(project_id=project_id, user_id=member_id).first()
+    
+    if not member:
+        return not_found_response("Member")
+    
+    db.session.delete(member)
+    db.session.commit()
+    
+    return success_response({'message': 'Member removed successfully'})
     except Exception as e:
         db.session.rollback()
         logger.error(f"Unexpected error adding member to project {project_id}: {e}")
