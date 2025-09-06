@@ -23,10 +23,10 @@ def test_endpoint():
     return jsonify({'message': 'Backend is working', 'timestamp': datetime.now().isoformat()})
 
 @projects_bp.route('/api/projects', methods=['GET'])
-@jwt_required()
 def get_projects():
     try:
-        user_id = get_jwt_identity()
+        # For now, use user_id = 1 for testing
+        user_id = 1
         projects = Project.query.filter_by(owner_id=user_id).all()
         return jsonify({
             'projects': [{
@@ -37,18 +37,17 @@ def get_projects():
             } for p in projects]
         })
     except Exception as e:
-        logger.error(f"Get projects error: {e}")
-        return jsonify({'error': 'Failed to fetch projects'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @projects_bp.route('/api/projects', methods=['POST'])
-@jwt_required()
 def create_project():
     try:
-        user_id = get_jwt_identity()
         data = request.get_json()
-        
         if not data or not data.get('name'):
             return jsonify({'error': 'Project name is required'}), 400
+        
+        # For now, use user_id = 1 for testing
+        user_id = 1
         
         project = Project(
             name=data['name'].strip(),
@@ -67,8 +66,7 @@ def create_project():
         }), 201
     except Exception as e:
         db.session.rollback()
-        logger.error(f"Project creation error: {e}")
-        return jsonify({'error': 'Failed to create project'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @projects_bp.route('/api/projects/<int:project_id>', methods=['GET'])
 @jwt_required()
