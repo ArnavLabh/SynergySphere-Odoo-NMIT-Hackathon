@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SynergySphere</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">SynergySphere</div>
+        <div class="nav-menu">
+            <a href="#projects">Projects</a>
+            <a href="#tasks">Tasks</a>
+            <a href="#team">Team</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="hero">
+            <div class="sphere-animation"></div>
+            <h1>Team Collaboration Reimagined</h1>
+            <p>Intelligent project management with seamless team sync</p>
+        </section>
+
+        <section id="projects" class="section">
+            <h2>Projects</h2>
+            <div class="card-grid" id="projects-grid"></div>
+        </section>
+
+        <section id="tasks" class="section">
+            <h2>Tasks</h2>
+            <div class="card-grid" id="tasks-grid"></div>
+        </section>
+
+        <section id="team" class="section">
+            <h2>Team</h2>
+            <div class="card-grid" id="team-grid"></div>
+        </section>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/api.js"></script>
+</body>
+</html>
