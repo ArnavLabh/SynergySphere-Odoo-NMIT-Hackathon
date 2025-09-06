@@ -70,24 +70,19 @@ def create_project():
 
 @projects_bp.route('/api/projects/<int:project_id>', methods=['GET'])
 def get_project(project_id):
-    user_id = get_jwt_identity()
-    project = Project.query.get(project_id)
-    
-    if not project:
-        return not_found_response("Project")
+    try:
+        project = Project.query.get(project_id)
+        if not project:
+            return jsonify({'error': 'Project not found'}), 404
         
-    is_owner = project.owner_id == user_id
-    is_member = ProjectMember.query.filter_by(project_id=project_id, user_id=user_id).first()
-    
-    if not (is_owner or is_member):
-        return access_denied_response()
-    
-    return success_response({
-        'id': project.id,
-        'name': project.name,
-        'description': project.description,
-        'created_at': project.created_at.isoformat()
-    })
+        return jsonify({
+            'id': project.id,
+            'name': project.name,
+            'description': project.description,
+            'created_at': project.created_at.isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @projects_bp.route('/api/projects/<int:project_id>', methods=['PUT'])
 @jwt_required()
@@ -192,65 +187,58 @@ def get_project_members(project_id):
 @jwt_required()
 def add_member(project_id):
     try:
-        project = Project.query.get(project_id)
-        if not project:
-            return jsonify({'error': 'Project not found'}), 404
+        user_id = get_jwt_identity()
+        project = Project.query.filter_by(id=project_id, owner_id=user_id).first()
         
-        return jsonify({
-            'id': project.id,
-            'name': project.name,
-            'description': project.description,
-            'created_at': project.created_at.isoformat()
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@projects_bp.route('/api/projects/<int:project_id>', methods=['PUT'])
-def update_project(project_id):
-    try:
-        project = Project.query.get(project_id)
         if not project:
-            return jsonify({'error': 'Project not found'}), 404
+            return jsonify({'error': 'Project not found or access denied'}), 404
         
         data = request.get_json()
-        if not data or not data.get('name'):
-            return jsonify({'error': 'Project name is required'}), 400
         
-        project.name = data['name'].strip()
-        project.description = data.get('description', '').strip()
+        error = validate_json(data, ['email'])
+        if error:
+            return error
         
+        user = User.query.filter_by(email=data['email']).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Check if already a member
+        existing = ProjectMember.query.filter_by(project_id=project_id, user_id=user.id).first()
+        if existing:
+            return jsonify({'error': 'User is already a member'}), 400
+        
+        # Add member
+        member = ProjectMember(
+            project_id=project_id,
+            user_id=user.id,
+            role=data.get('role', 'member')
+        )
+        
+        db.session.add(member)
         db.session.commit()
         
-        return jsonify({
-            'id': project.id,
-            'name': project.name,
-            'description': project.description,
-            'updated_at': datetime.now().isoformat()
-        })
+        # Get the name of the user who added the member
+        adder = User.query.get(user_id)
+        if adder:
+            notify_project_member_added(project_id, user.id, adder.name)
+        
+        return jsonify({'message': 'Member added successfully'})
+    except IntegrityError as e:
+        db.session.rollback()
+        logger.error(f"Database integrity error adding member to project {project_id}: {e}")
+        return jsonify({'error': 'Member already exists'}), 400
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.error(f"Database error adding member to project {project_id}: {e}")
+        return jsonify({'error': 'Failed to add member'}), 500
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Unexpected error adding member to project {project_id}: {e}")
+        return jsonify({'error': 'Failed to add member'}), 500
 
-@projects_bp.route('/api/projects/<int:project_id>', methods=['DELETE'])
-def delete_project(project_id):
-    try:
-        project = Project.query.get(project_id)
-        if not project:
-            return jsonify({'error': 'Project not found'}), 404
-        
-        # Delete related tasks and messages first
-        Task.query.filter_by(project_id=project_id).delete()
-        Message.query.filter_by(project_id=project_id).delete()
-        ProjectMember.query.filter_by(project_id=project_id).delete()
-        
-        # Delete the project
-        db.session.delete(project)
-        db.session.commit()
-        
-        return jsonify({'message': 'Project deleted successfully'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+
 
 # Tasks endpoints
 @projects_bp.route('/api/projects/<int:project_id>/tasks', methods=['GET'])
