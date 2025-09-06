@@ -446,7 +446,9 @@ body {
     gap: 1rem;
 }
 
-.form-group input {
+.form-group input,
+.form-group textarea,
+.form-group select {
     width: 100%;
     padding: 1rem;
     border: 2px solid rgba(99, 102, 241, 0.2);
@@ -455,13 +457,18 @@ body {
     background: rgba(15, 23, 42, 0.5);
     color: var(--light);
     transition: all 0.3s ease;
+    font-family: inherit;
+    resize: vertical;
 }
 
-.form-group input::placeholder {
+.form-group input::placeholder,
+.form-group textarea::placeholder {
     color: var(--gray);
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
     outline: none;
     border-color: var(--primary);
     background: rgba(15, 23, 42, 0.8);

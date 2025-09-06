@@ -31,9 +31,15 @@ def create_project():
         user_id = get_jwt_identity()
         data = request.get_json()
         
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+            
+        if not data.get('name'):
+            return jsonify({'error': 'Project name is required'}), 400
+        
         project = Project(
-            name=data['name'],
-            description=data.get('description', ''),
+            name=data['name'].strip(),
+            description=data.get('description', '').strip(),
             owner_id=user_id
         )
         
@@ -48,6 +54,7 @@ def create_project():
         }), 201
     except Exception as e:
         db.session.rollback()
+        print(f"Project creation error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @projects_bp.route('/api/projects/<int:project_id>', methods=['GET'])
