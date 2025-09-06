@@ -9,7 +9,7 @@ Our goal is simple: help teams **stay aligned, work smarter, and achieve more** 
 ---
 
 ## 🎥 Demo Video
-![Watch the Demo](https://drive.google.com/file/d/1g1khvZp01kRASPiG0bZHyH81VCHH4btD/view?usp=sharing) 
+[Watch the Demo](https://drive.google.com/file/d/1g1khvZp01kRASPiG0bZHyH81VCHH4btD/view?usp=sharing) 
 
 ---
 
