@@ -2,10 +2,6 @@ import os
 from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from flask_sqlalchemy import SQLAlchemy
-
-# Initialize extensions
-db = SQLAlchemy()
 
 # Create Flask app
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
@@ -22,13 +18,13 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
 
+# Import models and db
+from .models import db
+
 # Initialize extensions
 CORS(app)
 jwt = JWTManager(app)
 db.init_app(app)
-
-# Import models after db initialization
-from . import models
 
 # Import and register blueprints
 from .auth import auth_bp

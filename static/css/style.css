@@ -16,6 +16,10 @@
     --radius: 16px;
 }
 
+html {
+    background: radial-gradient(ellipse at top, var(--dark) 0%, var(--darker) 100%);
+}
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: radial-gradient(ellipse at top, var(--dark) 0%, var(--darker) 100%);
@@ -23,6 +27,8 @@ body {
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
+    margin: 0;
+    padding: 0;
 }
 
 /* Floating Spheres Background */
@@ -133,6 +139,7 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 1rem;
+    background: transparent;
 }
 
 /* Hero Section */
@@ -143,7 +150,7 @@ body {
     overflow: hidden;
 }
 
-.hero::before {
+/* .hero::before {
     content: '';
     position: absolute;
     top: -50%;
@@ -152,7 +159,7 @@ body {
     height: 200%;
     background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
     animation: rotate 20s linear infinite;
-}
+} */
 
 .sphere-animation {
     width: 120px;
@@ -196,7 +203,7 @@ body {
     background-clip: text;
     margin-bottom: 1.5rem;
     animation: fade-in-up 1s ease-out;
-    line-height: 1.1;
+    line-height: 1.3;
 }
 
 .hero-subtitle {
@@ -209,12 +216,12 @@ body {
 }
 
 .hero-description {
-    font-size: 1.1rem;
+    font-size: 0.8rem;
     color: var(--light);
     opacity: 0.8;
     margin-bottom: 3rem;
     animation: fade-in-up 1s ease-out 0.4s both;
-    max-width: 800px;
+    max-width: 1000px;
     margin-left: auto;
     margin-right: auto;
     line-height: 1.6;
