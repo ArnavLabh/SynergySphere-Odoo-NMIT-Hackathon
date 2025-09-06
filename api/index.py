@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from database import create_app, init_database
@@ -17,14 +17,12 @@ db = init_database(app)
 
 # Register blueprints
 app.register_blueprint(auth_bp)
+from projects import projects_bp
+app.register_blueprint(projects_bp)
 
 @app.route('/')
-def health_check():
-    return jsonify({
-        'status': 'ok', 
-        'message': 'SynergySphere API',
-        'version': '1.0.0'
-    })
+def index():
+    return render_template('index.html')
 
 @app.route('/api/health')
 def api_health_check():
@@ -45,7 +43,7 @@ def api_health_check():
 
 @app.errorhandler(404)
 def not_found(error):
-    return jsonify({'error': 'Not found'}), 404
+    return render_template('404.html'), 404
 
 @app.errorhandler(500)
 def internal_error(error):
