@@ -9,18 +9,45 @@
 <body>
     <nav class="navbar">
         <div class="nav-brand">SynergySphere</div>
-        <div class="nav-menu">
-            <a href="#projects">Projects</a>
-            <a href="#tasks">Tasks</a>
-            <a href="#team">Team</a>
+        <div class="nav-menu" id="navMenu">
+            <a href="/login" class="btn-outline">Sign In</a>
+            <a href="/register" class="btn-primary">Get Started</a>
         </div>
     </nav>
 
+    <div class="floating-spheres">
+        <div class="floating-sphere sphere-1"></div>
+        <div class="floating-sphere sphere-2"></div>
+        <div class="floating-sphere sphere-3"></div>
+    </div>
+    
     <main class="container">
         <section class="hero">
             <div class="sphere-animation"></div>
             <h1>Team Collaboration Reimagined</h1>
-            <p>Intelligent project management with seamless team sync</p>
+            <p class="hero-subtitle">The intelligent workspace where teams sync, create, and achieve more together</p>
+            <p class="hero-description">Transform scattered workflows into seamless collaboration. SynergySphere brings your team's projects, tasks, and conversations into one powerful platform.</p>
+            <div class="hero-actions">
+                <a href="/register" class="btn-primary btn-large">Start Collaborating</a>
+                <a href="/login" class="btn-outline btn-large">Sign In</a>
+            </div>
+            <div class="hero-features">
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Smart Project Management</h3>
+                    <p>Organize projects with intelligent task tracking and automated progress insights</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <h3>Seamless Communication</h3>
+                    <p>Keep conversations contextual with threaded discussions inside every project</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Real-time Analytics</h3>
+                    <p>Track team performance and project health with beautiful, actionable dashboards</p>
+                </div>
+            </div>
         </section>
 
         <section id="projects" class="section">
@@ -39,6 +66,7 @@
         </section>
     </main>
 
+    <script src="/static/js/auth.js"></script>
     <script src="/static/js/app.js"></script>
     <script src="/static/js/api.js"></script>
 </body>
