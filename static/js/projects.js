@@ -84,24 +84,43 @@ class Projects {
 
     async handleCreateProject(e) {
         e.preventDefault();
+        const form = e.target;
+        const modal = document.getElementById('createProjectModal');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        ErrorHandler.clearErrors(modal);
         
         const name = document.getElementById('projectName').value.trim();
         const description = document.getElementById('projectDescription').value.trim();
 
-        if (!name) {
-            this.showError('Project name is required');
+        // Client-side validation
+        const errors = FormValidator.validateForm(form, {
+            projectName: [
+                { type: 'required', message: 'Project name is required' }
+            ]
+        });
+        
+        if (Object.keys(errors).length > 0) {
+            ErrorHandler.showFieldErrors(form, errors);
             return;
         }
 
+        ErrorHandler.showLoading(submitBtn, 'Creating...');
+        
         try {
-            console.log('Creating project:', { name, description });
-            const result = await API.post('/projects', { name, description });
-            console.log('Project created:', result);
-            this.hideCreateModal();
-            this.loadProjects();
+            const result = await EnhancedAPI.post('/projects', { name, description });
+            
+            if (result.success !== false) {
+                ErrorHandler.showError(modal, 'Project created successfully!', 'success');
+                setTimeout(() => {
+                    this.hideCreateModal();
+                    this.loadProjects();
+                }, 1000);
+            }
         } catch (error) {
-            console.error('Project creation error:', error);
-            this.showError(error.message || 'Failed to create project');
+            ErrorHandler.handleApiError(error, modal, form);
+        } finally {
+            ErrorHandler.hideLoading(submitBtn);
         }
     }
 
@@ -138,10 +157,7 @@ class Projects {
         document.getElementById('messagesTab').style.display = tabName === 'messages' ? 'block' : 'none';
     }
 
-    showError(message) {
-        // Simple error display - could be enhanced with toast notifications
-        alert(message);
-    }
+
 }
 
 // Initialize projects

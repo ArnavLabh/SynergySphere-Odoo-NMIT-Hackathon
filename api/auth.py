@@ -4,7 +4,7 @@ from flask_jwt_extended import create_access_token
 from .models import db, User
 from .validation import validate_json
 from .shared.db_operations import safe_db_operation
-from .shared.response_helpers import success_response, error_response
+from .shared.response_helpers import success_response, error_response, validation_error_response
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -13,18 +13,34 @@ auth_bp = Blueprint('auth', __name__)
 def register():
     data = request.get_json()
     
-    error = validate_json(data, ['name', 'email', 'password'])
-    if error:
-        return error
+    # Enhanced validation with field-specific errors
+    field_errors = {}
     
-    if User.query.filter_by(email=data['email']).first():
-        return error_response('Email already exists')
+    if not data.get('name', '').strip():
+        field_errors['name'] = 'Name is required'
     
-    password_hash = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    email = data.get('email', '').strip()
+    if not email:
+        field_errors['email'] = 'Email is required'
+    elif '@' not in email or '.' not in email:
+        field_errors['email'] = 'Please enter a valid email address'
+    elif User.query.filter_by(email=email).first():
+        field_errors['email'] = 'This email is already registered'
+    
+    password = data.get('password', '')
+    if not password:
+        field_errors['password'] = 'Password is required'
+    elif len(password) < 6:
+        field_errors['password'] = 'Password must be at least 6 characters long'
+    
+    if field_errors:
+        return validation_error_response(field_errors)
+    
+    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     user = User(
-        name=data['name'],
-        email=data['email'],
+        name=data['name'].strip(),
+        email=email.lower(),
         password_hash=password_hash,
         role=data.get('role', 'employee')
     )
@@ -48,14 +64,26 @@ def register():
 def login():
     data = request.get_json()
     
-    error = validate_json(data, ['email', 'password'])
-    if error:
-        return error
+    # Enhanced validation with field-specific errors
+    field_errors = {}
     
-    user = User.query.filter_by(email=data['email']).first()
+    email = data.get('email', '').strip()
+    if not email:
+        field_errors['email'] = 'Email is required'
+    elif '@' not in email or '.' not in email:
+        field_errors['email'] = 'Please enter a valid email address'
     
-    if not user or not bcrypt.checkpw(data['password'].encode('utf-8'), user.password_hash.encode('utf-8')):
-        return error_response('Invalid credentials', 401)
+    password = data.get('password', '')
+    if not password:
+        field_errors['password'] = 'Password is required'
+    
+    if field_errors:
+        return validation_error_response(field_errors)
+    
+    user = User.query.filter_by(email=email.lower()).first()
+    
+    if not user or not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+        return error_response('Invalid email or password', 401, error_code='INVALID_CREDENTIALS')
     
     token = create_access_token(identity=user.id)
     return success_response({

@@ -62,7 +62,7 @@ class API {
                 Logger.error(`API Error ${response.status}`, { 
                     requestId, endpoint, error: data, status: response.status 
                 });
-                throw new Error(data.error || `HTTP ${response.status}`);
+                throw data;
             }
             
             Logger.info(`API Success: ${response.status}`, { requestId, endpoint });

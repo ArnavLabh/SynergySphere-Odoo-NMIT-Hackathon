@@ -20,40 +20,40 @@ def register_error_handlers(app):
     @app.errorhandler(400)
     def bad_request(error):
         logger.warning("Bad request", extra=get_error_context())
-        return jsonify({'error': 'Bad request'}), 400
+        return jsonify({'success': False, 'error': 'Bad request', 'error_code': 'BAD_REQUEST'}), 400
     
     @app.errorhandler(401)
     def unauthorized(error):
         logger.warning("Unauthorized access", extra=get_error_context())
-        return jsonify({'error': 'Unauthorized'}), 401
+        return jsonify({'success': False, 'error': 'Unauthorized', 'error_code': 'UNAUTHORIZED'}), 401
     
     @app.errorhandler(403)
     def forbidden(error):
         logger.warning("Forbidden access", extra=get_error_context())
-        return jsonify({'error': 'Access denied'}), 403
+        return jsonify({'success': False, 'error': 'Access denied', 'error_code': 'FORBIDDEN'}), 403
     
     @app.errorhandler(404)
     def not_found(error):
         logger.warning("Resource not found", extra=get_error_context())
-        return jsonify({'error': 'Resource not found'}), 404
+        return jsonify({'success': False, 'error': 'Resource not found', 'error_code': 'NOT_FOUND'}), 404
     
     @app.errorhandler(500)
     def internal_error(error):
         context = get_error_context()
         logger.error("Internal server error", extra=context, exc_info=True)
         capture_exception(error, context)
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({'success': False, 'error': 'Internal server error', 'error_code': 'INTERNAL_ERROR'}), 500
     
     @app.errorhandler(SQLAlchemyError)
     def database_error(error):
         context = get_error_context()
         logger.error("Database error", extra=context, exc_info=True)
         capture_exception(error, context)
-        return jsonify({'error': 'Database error occurred'}), 500
+        return jsonify({'success': False, 'error': 'Database error occurred', 'error_code': 'DATABASE_ERROR'}), 500
     
     @app.errorhandler(IntegrityError)
     def integrity_error(error):
         context = get_error_context()
         logger.error("Database integrity error", extra=context)
         capture_exception(error, context)
-        return jsonify({'error': 'Data integrity violation'}), 400
+        return jsonify({'success': False, 'error': 'Data integrity violation', 'error_code': 'INTEGRITY_ERROR'}), 400
