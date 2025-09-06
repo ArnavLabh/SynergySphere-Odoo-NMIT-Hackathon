@@ -59,16 +59,20 @@ class Projects {
         }
 
         grid.innerHTML = this.projects.map(project => `
-            <div class="project-card" onclick="projects.openProject(${project.id})">
+            <div class="project-card">
                 <div class="project-header">
-                    <h3>${project.name}</h3>
-                    <span class="project-date">${new Date(project.created_at).toLocaleDateString()}</span>
+                    <h3 onclick="projects.openProject(${project.id})" style="cursor: pointer;">${project.name}</h3>
+                    <div class="project-actions">
+                        <button onclick="projects.editProject(${project.id})" class="btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Edit</button>
+                        <button onclick="projects.deleteProject(${project.id})" class="btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; color: #e53e3e; border-color: #e53e3e;">Delete</button>
+                    </div>
                 </div>
                 <p class="project-description">${project.description || 'No description'}</p>
                 <div class="project-stats">
                     <span class="stat">📋 Tasks</span>
                     <span class="stat">💬 Messages</span>
                 </div>
+                <span class="project-date">${new Date(project.created_at).toLocaleDateString()}</span>
             </div>
         `).join('');
     }
@@ -80,6 +84,11 @@ class Projects {
     hideCreateModal() {
         document.getElementById('createProjectModal').style.display = 'none';
         document.getElementById('createProjectForm').reset();
+        
+        // Reset modal to create mode
+        this.editingProjectId = null;
+        document.getElementById('createProjectTitle').textContent = 'Create New Project';
+        document.querySelector('#createProjectForm button[type="submit"]').textContent = 'Create Project';
     }
 
     async handleCreateProject(e) {
@@ -96,16 +105,30 @@ class Projects {
         }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Creating...';
         
         try {
-            const response = await fetch('/api/projects', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ name, description })
-            });
+            let response;
+            if (this.editingProjectId) {
+                // Update existing project
+                submitBtn.textContent = 'Updating...';
+                response = await fetch(`/api/projects/${this.editingProjectId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, description })
+                });
+            } else {
+                // Create new project
+                submitBtn.textContent = 'Creating...';
+                response = await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, description })
+                });
+            }
             
             const result = await response.json();
             
@@ -116,14 +139,15 @@ class Projects {
             this.hideCreateModal();
             this.loadProjects();
             
+            const action = this.editingProjectId ? 'updated' : 'created';
             if (window.AccessibilityManager) {
-                window.AccessibilityManager.announce('Project created successfully');
+                window.AccessibilityManager.announce(`Project ${action} successfully`);
             }
         } catch (error) {
-            this.showError(error.message || 'Failed to create project');
+            this.showError(error.message || 'Failed to save project');
         } finally {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Create Project';
+            submitBtn.textContent = this.editingProjectId ? 'Update Project' : 'Create Project';
         }
     }
 
@@ -172,6 +196,58 @@ class Projects {
             setTimeout(() => errorDiv.style.display = 'none', 5000);
         } else {
             alert(message);
+        }
+    }
+
+    async editProject(projectId) {
+        try {
+            const response = await fetch(`/api/projects/${projectId}`);
+            const project = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(project.error);
+            }
+            
+            // Pre-fill the form with existing data
+            document.getElementById('projectName').value = project.name;
+            document.getElementById('projectDescription').value = project.description || '';
+            
+            // Store the project ID for updating
+            this.editingProjectId = projectId;
+            
+            // Change modal title and button text
+            document.getElementById('createProjectTitle').textContent = 'Edit Project';
+            document.querySelector('#createProjectForm button[type="submit"]').textContent = 'Update Project';
+            
+            this.showCreateModal();
+        } catch (error) {
+            this.showError('Failed to load project details');
+        }
+    }
+    
+    async deleteProject(projectId) {
+        if (!confirm('Are you sure you want to delete this project? This will also delete all tasks and messages.')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/projects/${projectId}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error);
+            }
+            
+            this.loadProjects();
+            
+            if (window.AccessibilityManager) {
+                window.AccessibilityManager.announce('Project deleted successfully');
+            }
+        } catch (error) {
+            this.showError('Failed to delete project');
         }
     }
 

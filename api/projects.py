@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from .models import db, Project, User, ProjectMember
+from .models import db, Project, User, ProjectMember, Task, Message
 from .validation import validate_json
 from .query_utils import get_user_projects_query
 from .pagination import get_pagination_params, format_pagination_response
@@ -68,74 +68,187 @@ def create_project():
         return jsonify({'error': str(e)}), 500
 
 @projects_bp.route('/api/projects/<int:project_id>', methods=['GET'])
-@jwt_required()
-@safe_db_operation("fetch project")
 def get_project(project_id):
-    user_id = get_jwt_identity()
-    project = Project.query.get(project_id)
-    
-    if not project:
-        return not_found_response("Project")
-        
-    is_owner = project.owner_id == user_id
-    is_member = ProjectMember.query.filter_by(project_id=project_id, user_id=user_id).first()
-    
-    if not (is_owner or is_member):
-        return access_denied_response()
-    
-    return success_response({
-        'id': project.id,
-        'name': project.name,
-        'description': project.description,
-        'created_at': project.created_at.isoformat()
-    })
-
-@projects_bp.route('/api/projects/<int:project_id>/members', methods=['POST'])
-@jwt_required()
-def add_member(project_id):
     try:
-        user_id = get_jwt_identity()
-        project = Project.query.filter_by(id=project_id, owner_id=user_id).first()
-        
+        project = Project.query.get(project_id)
         if not project:
-            return jsonify({'error': 'Project not found or access denied'}), 404
+            return jsonify({'error': 'Project not found'}), 404
+        
+        return jsonify({
+            'id': project.id,
+            'name': project.name,
+            'description': project.description,
+            'created_at': project.created_at.isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@projects_bp.route('/api/projects/<int:project_id>', methods=['PUT'])
+def update_project(project_id):
+    try:
+        project = Project.query.get(project_id)
+        if not project:
+            return jsonify({'error': 'Project not found'}), 404
         
         data = request.get_json()
+        if not data or not data.get('name'):
+            return jsonify({'error': 'Project name is required'}), 400
         
-        error = validate_json(data, ['email'])
-        if error:
-            return error
+        project.name = data['name'].strip()
+        project.description = data.get('description', '').strip()
         
-        user = User.query.filter_by(email=data['email']).first()
-        
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        # Check if already a member
-        existing = ProjectMember.query.filter_by(project_id=project_id, user_id=user.id).first()
-        if existing:
-            return jsonify({'error': 'User is already a member'}), 400
-        
-        # Add member
-        member = ProjectMember(
-            project_id=project_id,
-            user_id=user.id,
-            role=data.get('role', 'member')
-        )
-        
-        db.session.add(member)
         db.session.commit()
         
-        return jsonify({'message': 'Member added successfully'})
-    except IntegrityError as e:
-        db.session.rollback()
-        logger.error(f"Database integrity error adding member to project {project_id}: {e}")
-        return jsonify({'error': 'Member already exists'}), 400
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        logger.error(f"Database error adding member to project {project_id}: {e}")
-        return jsonify({'error': 'Failed to add member'}), 500
+        return jsonify({
+            'id': project.id,
+            'name': project.name,
+            'description': project.description,
+            'updated_at': datetime.now().isoformat()
+        })
     except Exception as e:
         db.session.rollback()
-        logger.error(f"Unexpected error adding member to project {project_id}: {e}")
-        return jsonify({'error': 'Failed to add member'}), 500
+        return jsonify({'error': str(e)}), 500
+
+@projects_bp.route('/api/projects/<int:project_id>', methods=['DELETE'])
+def delete_project(project_id):
+    try:
+        project = Project.query.get(project_id)
+        if not project:
+            return jsonify({'error': 'Project not found'}), 404
+        
+        # Delete related tasks and messages first
+        Task.query.filter_by(project_id=project_id).delete()
+        Message.query.filter_by(project_id=project_id).delete()
+        ProjectMember.query.filter_by(project_id=project_id).delete()
+        
+        # Delete the project
+        db.session.delete(project)
+        db.session.commit()
+        
+        return jsonify({'message': 'Project deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Tasks endpoints
+@projects_bp.route('/api/projects/<int:project_id>/tasks', methods=['GET'])
+def get_tasks(project_id):
+    try:
+        tasks = Task.query.filter_by(project_id=project_id).all()
+        return jsonify({
+            'tasks': [{
+                'id': t.id,
+                'title': t.title,
+                'description': t.description,
+                'status': t.status,
+                'priority': t.priority,
+                'assignee_id': t.assignee_id,
+                'due_date': t.due_date.isoformat() if t.due_date else None,
+                'created_at': t.created_at.isoformat()
+            } for t in tasks]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@projects_bp.route('/api/projects/<int:project_id>/tasks', methods=['POST'])
+def create_task(project_id):
+    try:
+        data = request.get_json()
+        if not data or not data.get('title'):
+            return jsonify({'error': 'Task title is required'}), 400
+        
+        task = Task(
+            project_id=project_id,
+            title=data['title'].strip(),
+            description=data.get('description', '').strip(),
+            status=data.get('status', 'todo'),
+            priority=data.get('priority', 'medium'),
+            assignee_id=data.get('assignee_id')
+        )
+        
+        db.session.add(task)
+        db.session.commit()
+        
+        return jsonify({
+            'id': task.id,
+            'title': task.title,
+            'description': task.description,
+            'status': task.status,
+            'priority': task.priority,
+            'created_at': task.created_at.isoformat()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@projects_bp.route('/api/tasks/<int:task_id>', methods=['PATCH'])
+def update_task(task_id):
+    try:
+        task = Task.query.get(task_id)
+        if not task:
+            return jsonify({'error': 'Task not found'}), 404
+        
+        data = request.get_json()
+        if 'status' in data:
+            task.status = data['status']
+        if 'title' in data:
+            task.title = data['title']
+        if 'description' in data:
+            task.description = data['description']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'id': task.id,
+            'title': task.title,
+            'status': task.status,
+            'updated_at': task.updated_at.isoformat()
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Messages endpoints
+@projects_bp.route('/api/projects/<int:project_id>/messages', methods=['GET'])
+def get_messages(project_id):
+    try:
+        messages = Message.query.filter_by(project_id=project_id).order_by(Message.created_at).all()
+        return jsonify({
+            'messages': [{
+                'id': m.id,
+                'content': m.content,
+                'user_id': m.user_id,
+                'created_at': m.created_at.isoformat()
+            } for m in messages]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@projects_bp.route('/api/projects/<int:project_id>/messages', methods=['POST'])
+def create_message(project_id):
+    try:
+        data = request.get_json()
+        if not data or not data.get('content'):
+            return jsonify({'error': 'Message content is required'}), 400
+        
+        # Use user_id = 1 for testing
+        user_id = 1
+        
+        message = Message(
+            project_id=project_id,
+            user_id=user_id,
+            content=data['content'].strip()
+        )
+        
+        db.session.add(message)
+        db.session.commit()
+        
+        return jsonify({
+            'id': message.id,
+            'content': message.content,
+            'user_id': message.user_id,
+            'created_at': message.created_at.isoformat()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

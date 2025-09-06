@@ -21,7 +21,14 @@ class Messages {
         this.currentProjectId = projectId;
         
         try {
-            this.messages = await API.get(`/projects/${projectId}/messages`);
+            const response = await fetch(`/api/projects/${projectId}/messages`);
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error);
+            }
+            
+            this.messages = result.messages || [];
             this.renderMessages();
             this.startPolling();
         } catch (error) {
@@ -67,7 +74,20 @@ class Messages {
         if (!message) return;
 
         try {
-            await API.post(`/projects/${this.currentProjectId}/messages`, { content: message });
+            const response = await fetch(`/api/projects/${this.currentProjectId}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content: message })
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error);
+            }
+            
             messageInput.value = '';
             this.loadMessages(this.currentProjectId);
         } catch (error) {

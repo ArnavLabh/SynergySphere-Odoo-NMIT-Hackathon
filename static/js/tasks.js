@@ -19,7 +19,14 @@ class Tasks {
     async loadTasks(projectId) {
         this.currentProjectId = projectId;
         try {
-            this.tasks = await API.get(`/projects/${projectId}/tasks`);
+            const response = await fetch(`/api/projects/${projectId}/tasks`);
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error);
+            }
+            
+            this.tasks = result.tasks || [];
             this.renderTasks();
             this.updateProgress();
         } catch (error) {
@@ -130,7 +137,18 @@ class Tasks {
 
     async updateTaskStatus(taskId, newStatus) {
         try {
-            await API.patch(`/tasks/${taskId}`, { status: newStatus });
+            const response = await fetch(`/api/tasks/${taskId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to update task');
+            }
+            
             // Update local task status
             const task = this.tasks.find(t => t.id == taskId);
             if (task) {
@@ -183,16 +201,25 @@ class Tasks {
         
         const title = document.getElementById('taskTitle').value;
         const description = document.getElementById('taskDescription').value;
-        const assignedTo = document.getElementById('taskAssignee').value;
-        const dueDate = document.getElementById('taskDueDate').value;
 
         try {
-            await API.post(`/projects/${this.currentProjectId}/tasks`, {
-                title,
-                description,
-                assignee_id: assignedTo || null,
-                due_date: dueDate || null
+            const response = await fetch(`/api/projects/${this.currentProjectId}/tasks`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title,
+                    description
+                })
             });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error);
+            }
+            
             this.hideCreateModal();
             this.loadTasks(this.currentProjectId);
         } catch (error) {

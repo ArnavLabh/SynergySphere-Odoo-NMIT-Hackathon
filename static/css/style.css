@@ -694,6 +694,28 @@ body {
     margin-bottom: 1rem;
 }
 
+.project-actions {
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.project-card:hover .project-actions {
+    opacity: 1;
+}
+
+.project-actions button {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.project-actions button:hover {
+    transform: translateY(-1px);
+}
+
 .project-header h3 {
     color: var(--light);
     margin: 0;
