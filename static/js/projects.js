@@ -32,11 +32,11 @@ class Projects {
 
     async loadProjects() {
         try {
-            this.projects = await API.get('/projects');
+            const response = await API.get('/projects');
+            this.projects = response.projects || [];
             this.renderProjects();
         } catch (error) {
             console.error('Load projects error:', error);
-            // Don't show error for empty projects, just render empty state
             this.projects = [];
             this.renderProjects();
         }
@@ -85,42 +85,33 @@ class Projects {
     async handleCreateProject(e) {
         e.preventDefault();
         const form = e.target;
-        const modal = document.getElementById('createProjectModal');
         const submitBtn = form.querySelector('button[type="submit"]');
-        
-        ErrorHandler.clearErrors(modal);
         
         const name = document.getElementById('projectName').value.trim();
         const description = document.getElementById('projectDescription').value.trim();
 
-        // Client-side validation
-        const errors = FormValidator.validateForm(form, {
-            projectName: [
-                { type: 'required', message: 'Project name is required' }
-            ]
-        });
-        
-        if (Object.keys(errors).length > 0) {
-            ErrorHandler.showFieldErrors(form, errors);
+        if (!name) {
+            this.showError('Project name is required');
             return;
         }
 
-        ErrorHandler.showLoading(submitBtn, 'Creating...');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
         
         try {
-            const result = await EnhancedAPI.post('/projects', { name, description });
+            const result = await API.post('/projects', { name, description });
             
-            if (result.success !== false) {
-                ErrorHandler.showError(modal, 'Project created successfully!', 'success');
-                setTimeout(() => {
-                    this.hideCreateModal();
-                    this.loadProjects();
-                }, 1000);
+            this.hideCreateModal();
+            this.loadProjects();
+            
+            if (window.AccessibilityManager) {
+                window.AccessibilityManager.announce('Project created successfully');
             }
         } catch (error) {
-            ErrorHandler.handleApiError(error, modal, form);
+            this.showError(error.message || 'Failed to create project');
         } finally {
-            ErrorHandler.hideLoading(submitBtn);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Project';
         }
     }
 
@@ -149,15 +140,28 @@ class Projects {
 
     showTab(tabName) {
         // Update tab buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-selected', 'false');
+        });
         event.target.classList.add('active');
+        event.target.setAttribute('aria-selected', 'true');
 
         // Show/hide tab content
         document.getElementById('tasksTab').style.display = tabName === 'tasks' ? 'block' : 'none';
         document.getElementById('messagesTab').style.display = tabName === 'messages' ? 'block' : 'none';
     }
 
-
+    showError(message) {
+        const errorDiv = document.querySelector('.error-message');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 5000);
+        } else {
+            alert(message);
+        }
+    }
 }
 
 // Initialize projects
