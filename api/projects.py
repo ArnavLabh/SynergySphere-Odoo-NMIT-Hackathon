@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from .models import db, Project, User, ProjectMember
+from . import db
+from .models import Project, User, ProjectMember
 
 projects_bp = Blueprint('projects', __name__)
 

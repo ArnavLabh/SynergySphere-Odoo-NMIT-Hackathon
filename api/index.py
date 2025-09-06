@@ -28,7 +28,7 @@ jwt = JWTManager(app)
 db.init_app(app)
 
 # Import models after db initialization
-from .models import User, Project, Task, Message, ProjectMember
+from . import models
 
 # Import and register blueprints
 from .auth import auth_bp
