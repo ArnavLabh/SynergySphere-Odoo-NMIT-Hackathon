@@ -1,6 +1,5 @@
 import os
-import logging
-from flask import Flask
+from flask import Flask, g
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
@@ -8,6 +7,8 @@ from flask_migrate import Migrate
 from .models import db
 from .config import config
 from .error_handlers import register_error_handlers
+from .shared.logging_config import setup_logging
+from .shared.error_tracking import init_sentry, add_request_id
 
 def create_app(config_name=None):
     """Application factory with centralized configuration"""
@@ -28,24 +29,30 @@ def create_app(config_name=None):
     from .projects import projects_bp
     from .tasks import tasks_bp
     from .messages import messages_bp
+    from .client_errors import client_errors_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(projects_bp)
     app.register_blueprint(tasks_bp)
     app.register_blueprint(messages_bp)
+    app.register_blueprint(client_errors_bp)
     
     # Register routes
     from . import routes
     routes.register_routes(app)
     
+    # Setup structured logging
+    setup_logging(app)
+    
+    # Initialize error tracking
+    init_sentry(app)
+    
+    # Add request ID middleware
+    @app.before_request
+    def before_request():
+        add_request_id()
+    
     # Register error handlers
     register_error_handlers(app)
-    
-    # Configure logging
-    if not app.debug:
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s %(levelname)s %(name)s: %(message)s'
-        )
     
     return app

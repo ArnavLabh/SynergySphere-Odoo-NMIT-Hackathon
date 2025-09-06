@@ -213,7 +213,29 @@ class Tasks {
     }
 
     showError(message) {
-        alert(message);
+        // Use accessible error display instead of alert
+        const errorContainer = document.querySelector('[role="alert"]');
+        if (errorContainer) {
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+        } else {
+            alert(message); // Fallback
+        }
+        
+        // Announce error to screen readers
+        if (window.AccessibilityManager) {
+            window.AccessibilityManager.announce(`Error: ${message}`);
+        }
+    }
+
+    updateTaskStatus(taskId, newStatus) {
+        // Announce status change
+        if (window.AccessibilityManager) {
+            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (taskElement) {
+                window.AccessibilityManager.updateTaskStatus(taskElement, newStatus);
+            }
+        }
     }
 }
 

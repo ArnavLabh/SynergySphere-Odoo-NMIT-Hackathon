@@ -7,16 +7,17 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <nav class="navbar">
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
         <div class="nav-brand">SynergySphere</div>
         <div class="nav-menu" id="navMenu">
-            <div class="hamburger" id="hamburger">
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" 
+                    aria-expanded="false" aria-controls="navLinks">
                 <span></span><span></span><span></span>
-            </div>
-            <div class="nav-links" id="navLinks">
-                <a href="/dashboard" class="active">Dashboard</a>
-                <a href="/profile">Profile</a>
-                <button onclick="auth.logout()" class="btn-outline">Logout</button>
+            </button>
+            <div class="nav-links" id="navLinks" role="menubar">
+                <a href="/dashboard" class="active" role="menuitem" aria-current="page">Dashboard</a>
+                <a href="/profile" role="menuitem">Profile</a>
+                <button onclick="auth.logout()" class="btn-outline" role="menuitem">Logout</button>
             </div>
         </div>
     </nav>
@@ -24,14 +25,15 @@
     <main class="dashboard-container">
         <div class="dashboard-header">
             <h1>Welcome back, <span id="userName">User</span></h1>
-            <button class="btn-primary" onclick="projects.showCreateModal()">+ New Project</button>
+            <button class="btn-primary" onclick="projects.showCreateModal()" 
+                    aria-label="Create new project">+ New Project</button>
         </div>
 
         <div class="dashboard-grid">
-            <section class="projects-section">
-                <h2>Your Projects</h2>
-                <div class="projects-grid" id="projectsGrid">
-                    <div class="loading">Loading projects...</div>
+            <section class="projects-section" aria-labelledby="projectsHeading">
+                <h2 id="projectsHeading">Your Projects</h2>
+                <div class="projects-grid" id="projectsGrid" role="grid" aria-label="Projects list">
+                    <div class="loading" role="status" aria-live="polite">Loading projects...</div>
                 </div>
             </section>
         </div>
@@ -43,28 +45,31 @@
                 <h2 id="projectTitle">Project Name</h2>
             </div>
             
-            <div class="project-tabs">
-                <button class="tab-btn active" onclick="projects.showTab('tasks')">Tasks</button>
-                <button class="tab-btn" onclick="projects.showTab('messages')">Messages</button>
+            <div class="project-tabs" role="tablist" aria-label="Project sections">
+                <button class="tab-btn active" onclick="projects.showTab('tasks')" 
+                        role="tab" aria-selected="true" aria-controls="tasksTab" id="tasksTabBtn">Tasks</button>
+                <button class="tab-btn" onclick="projects.showTab('messages')" 
+                        role="tab" aria-selected="false" aria-controls="messagesTab" id="messagesTabBtn">Messages</button>
             </div>
 
-            <div class="tab-content" id="tasksTab">
+            <div class="tab-content" id="tasksTab" role="tabpanel" aria-labelledby="tasksTabBtn">
                 <div class="tasks-header">
                     <h3>Tasks</h3>
-                    <button class="btn-primary" onclick="tasks.showCreateModal()">+ Add Task</button>
+                    <button class="btn-primary" onclick="tasks.showCreateModal()" 
+                            aria-label="Add new task">+ Add Task</button>
                 </div>
-                <div class="tasks-board">
+                <div class="tasks-board" role="region" aria-label="Task board">
                     <div class="task-column">
-                        <h4>To Do</h4>
-                        <div class="task-list" id="todoTasks"></div>
+                        <h4 id="todoHeading">To Do</h4>
+                        <div class="task-list" id="todoTasks" role="list" aria-labelledby="todoHeading"></div>
                     </div>
                     <div class="task-column">
-                        <h4>In Progress</h4>
-                        <div class="task-list" id="inProgressTasks"></div>
+                        <h4 id="progressHeading">In Progress</h4>
+                        <div class="task-list" id="inProgressTasks" role="list" aria-labelledby="progressHeading"></div>
                     </div>
                     <div class="task-column">
-                        <h4>Done</h4>
-                        <div class="task-list" id="doneTasks"></div>
+                        <h4 id="doneHeading">Done</h4>
+                        <div class="task-list" id="doneTasks" role="list" aria-labelledby="doneHeading"></div>
                     </div>
                 </div>
                 <div class="progress-section">
@@ -76,12 +81,15 @@
                 </div>
             </div>
 
-            <div class="tab-content" id="messagesTab" style="display: none;">
+            <div class="tab-content" id="messagesTab" role="tabpanel" aria-labelledby="messagesTabBtn" style="display: none;">
                 <div class="messages-container">
-                    <div class="messages-list" id="messagesList"></div>
-                    <form class="message-form" id="messageForm">
-                        <input type="text" id="messageInput" placeholder="Type a message..." required>
-                        <button type="submit" class="btn-primary">Send</button>
+                    <div class="messages-list" id="messagesList" role="log" aria-live="polite" 
+                         aria-label="Project messages"></div>
+                    <form class="message-form" id="messageForm" role="form">
+                        <label for="messageInput" class="visually-hidden">Type your message</label>
+                        <input type="text" id="messageInput" placeholder="Type a message..." required 
+                               aria-label="Message text">
+                        <button type="submit" class="btn-primary" aria-label="Send message">Send</button>
                     </form>
                 </div>
             </div>
@@ -89,19 +97,27 @@
     </main>
 
     <!-- Create Project Modal -->
-    <div class="modal" id="createProjectModal">
+    <div class="modal" id="createProjectModal" role="dialog" aria-labelledby="createProjectTitle" 
+         aria-hidden="true" aria-modal="true">
         <div class="modal-content">
-            <h3>Create New Project</h3>
-            <form id="createProjectForm">
+            <h3 id="createProjectTitle">Create New Project</h3>
+            <form id="createProjectForm" role="form">
                 <div class="form-group">
-                    <input type="text" id="projectName" placeholder="Project Name" required>
+                    <label for="projectName" class="visually-hidden">Project Name</label>
+                    <input type="text" id="projectName" placeholder="Project Name" required 
+                           aria-describedby="projectNameHelp">
+                    <div id="projectNameHelp" class="form-help">Enter a descriptive name for your project</div>
                 </div>
 
                 <div class="form-group">
-                    <textarea id="projectDescription" placeholder="Project Description" rows="3"></textarea>
+                    <label for="projectDescription" class="visually-hidden">Project Description</label>
+                    <textarea id="projectDescription" placeholder="Project Description" rows="3" 
+                              aria-describedby="projectDescHelp"></textarea>
+                    <div id="projectDescHelp" class="form-help">Optional: Describe your project goals</div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn-outline" onclick="projects.hideCreateModal()">Cancel</button>
+                    <button type="button" class="btn-outline" onclick="projects.hideCreateModal()" 
+                            aria-label="Cancel project creation">Cancel</button>
                     <button type="submit" class="btn-primary">Create Project</button>
                 </div>
             </form>
@@ -109,32 +125,39 @@
     </div>
 
     <!-- Create Task Modal -->
-    <div class="modal" id="createTaskModal">
+    <div class="modal" id="createTaskModal" role="dialog" aria-labelledby="createTaskTitle" 
+         aria-hidden="true" aria-modal="true">
         <div class="modal-content">
-            <h3>Create New Task</h3>
-            <form id="createTaskForm">
+            <h3 id="createTaskTitle">Create New Task</h3>
+            <form id="createTaskForm" role="form">
                 <div class="form-group">
+                    <label for="taskTitle" class="visually-hidden">Task Title</label>
                     <input type="text" id="taskTitle" placeholder="Task Title" required>
                 </div>
                 <div class="form-group">
+                    <label for="taskDescription" class="visually-hidden">Task Description</label>
                     <textarea id="taskDescription" placeholder="Task Description" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <select id="taskAssignee">
+                    <label for="taskAssignee" class="visually-hidden">Assign Task To</label>
+                    <select id="taskAssignee" aria-label="Select team member to assign task">
                         <option value="">Assign to...</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <input type="date" id="taskDueDate">
+                    <label for="taskDueDate" class="visually-hidden">Due Date</label>
+                    <input type="date" id="taskDueDate" aria-label="Select due date for task">
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn-outline" onclick="tasks.hideCreateModal()">Cancel</button>
+                    <button type="button" class="btn-outline" onclick="tasks.hideCreateModal()" 
+                            aria-label="Cancel task creation">Cancel</button>
                     <button type="submit" class="btn-primary">Create Task</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <script src="/static/js/accessibility.js"></script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/api.js"></script>
     <script src="/static/js/projects.js"></script>

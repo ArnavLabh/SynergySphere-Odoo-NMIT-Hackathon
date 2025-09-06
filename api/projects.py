@@ -1,114 +1,79 @@
-from flask import Blueprint, request, jsonify
-import logging
+from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy.orm import joinedload
-from sqlalchemy import or_
 from .models import db, Project, User, ProjectMember
 from .validation import validate_json
 from .query_utils import get_user_projects_query
 from .pagination import get_pagination_params, format_pagination_response
 from .serializers import serialize_project
-
-logger = logging.getLogger(__name__)
+from .shared.db_operations import safe_db_operation
+from .shared.response_helpers import success_response, error_response, not_found_response, access_denied_response, created_response
 
 projects_bp = Blueprint('projects', __name__)
 
 @projects_bp.route('/api/projects', methods=['GET'])
 @jwt_required()
+@safe_db_operation("fetch projects")
 def get_projects():
-    try:
-        user_id = get_jwt_identity()
-        
-        page, per_page = get_pagination_params(default_per_page=20)
-        
-        # Use optimized query utility
-        projects_query = get_user_projects_query(user_id)
-        
-        projects_paginated = projects_query.paginate(page=page, per_page=per_page, error_out=False)
-        
-        response = format_pagination_response(projects_paginated, 'projects')
-        response['projects'] = [serialize_project(p) for p in projects_paginated.items]
-        
-        return jsonify(response)
-    except SQLAlchemyError as e:
-        logger.error(f"Database error fetching projects for user {user_id}: {e}")
-        return jsonify({'error': 'Failed to fetch projects'}), 500
-    except Exception as e:
-        logger.error(f"Unexpected error fetching projects for user {user_id}: {e}")
-        return jsonify({'error': 'Failed to fetch projects'}), 500
+    user_id = get_jwt_identity()
+    page, per_page = get_pagination_params(default_per_page=20)
+    
+    projects_query = get_user_projects_query(user_id)
+    projects_paginated = projects_query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    response = format_pagination_response(projects_paginated, 'projects')
+    response['projects'] = [serialize_project(p) for p in projects_paginated.items]
+    
+    return success_response(response)
 
 @projects_bp.route('/api/projects', methods=['POST'])
 @jwt_required()
+@safe_db_operation("create project")
 def create_project():
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        
-        error = validate_json(data, ['name'])
-        if error:
-            return error
-        
-        project = Project(
-            name=data['name'].strip(),
-            description=data.get('description', '').strip(),
-            owner_id=user_id
-        )
-        
-        db.session.add(project)
-        db.session.commit()
-        
-        return jsonify({
-            'id': project.id,
-            'name': project.name,
-            'description': project.description,
-            'created_at': project.created_at.isoformat()
-        }), 201
-    except IntegrityError as e:
-        db.session.rollback()
-        logger.error(f"Database integrity error creating project: {e}")
-        return jsonify({'error': 'Project name already exists'}), 400
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        logger.error(f"Database error creating project: {e}")
-        return jsonify({'error': 'Failed to create project'}), 500
-    except ValueError as e:
-        logger.error(f"Validation error creating project: {e}")
-        return jsonify({'error': 'Invalid project data'}), 400
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Unexpected error creating project: {e}")
-        return jsonify({'error': 'Failed to create project'}), 500
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    error = validate_json(data, ['name'])
+    if error:
+        return error
+    
+    project = Project(
+        name=data['name'].strip(),
+        description=data.get('description', '').strip(),
+        owner_id=user_id
+    )
+    
+    db.session.add(project)
+    db.session.commit()
+    
+    return created_response({
+        'id': project.id,
+        'name': project.name,
+        'description': project.description,
+        'created_at': project.created_at.isoformat()
+    })
 
 @projects_bp.route('/api/projects/<int:project_id>', methods=['GET'])
 @jwt_required()
+@safe_db_operation("fetch project")
 def get_project(project_id):
-    try:
-        user_id = get_jwt_identity()
-        # Check if user is owner or member
-        project = Project.query.get(project_id)
+    user_id = get_jwt_identity()
+    project = Project.query.get(project_id)
+    
+    if not project:
+        return not_found_response("Project")
         
-        if not project:
-            return jsonify({'error': 'Project not found'}), 404
-            
-        is_owner = project.owner_id == user_id
-        is_member = ProjectMember.query.filter_by(project_id=project_id, user_id=user_id).first()
-        
-        if not (is_owner or is_member):
-            return jsonify({'error': 'Access denied'}), 403
-        
-        return jsonify({
-            'id': project.id,
-            'name': project.name,
-            'description': project.description,
-            'created_at': project.created_at.isoformat()
-        })
-    except SQLAlchemyError as e:
-        logger.error(f"Database error fetching project {project_id}: {e}")
-        return jsonify({'error': 'Failed to fetch project'}), 500
-    except Exception as e:
-        logger.error(f"Unexpected error fetching project {project_id}: {e}")
-        return jsonify({'error': 'Failed to fetch project'}), 500
+    is_owner = project.owner_id == user_id
+    is_member = ProjectMember.query.filter_by(project_id=project_id, user_id=user_id).first()
+    
+    if not (is_owner or is_member):
+        return access_denied_response()
+    
+    return success_response({
+        'id': project.id,
+        'name': project.name,
+        'description': project.description,
+        'created_at': project.created_at.isoformat()
+    })
 
 @projects_bp.route('/api/projects/<int:project_id>/members', methods=['POST'])
 @jwt_required()

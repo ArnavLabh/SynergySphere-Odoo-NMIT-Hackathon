@@ -5,6 +5,64 @@
     box-sizing: border-box;
 }
 
+/* Accessibility Utilities */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.form-help {
+    font-size: 0.875rem;
+    color: var(--gray);
+    margin-top: 0.25rem;
+    opacity: 0.8;
+}
+
+/* Enhanced Focus States */
+*:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.2);
+}
+
+.btn-primary:focus,
+.btn-outline:focus {
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.3), 0 8px 25px rgba(99, 102, 241, 0.3);
+}
+
+/* Skip Link */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--primary);
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    z-index: 1001;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.skip-link:focus {
+    top: 6px;
+}
+
 :root {
     --primary: #6366f1;
     --secondary: #8b5cf6;
@@ -937,6 +995,19 @@ body {
     flex-direction: column;
     cursor: pointer;
     gap: 4px;
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.hamburger:focus {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+.hamburger:hover {
+    background: rgba(99, 102, 241, 0.1);
 }
 
 .hamburger span {
