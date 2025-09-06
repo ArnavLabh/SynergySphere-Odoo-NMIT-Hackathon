@@ -2,6 +2,8 @@ def serialize_task(task):
     """Serialize task object to dictionary"""
     return {
         'id': task.id,
+        'project_id': task.project_id,
+        'project_name': task.project.name if hasattr(task, 'project') and task.project else None,
         'title': task.title,
         'description': task.description,
         'status': task.status,

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks - SynergySphere</title>
+    <link rel="icon" type="image/png" href="/static/img/logo.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="floating-spheres">
+        <div class="floating-sphere sphere-1"></div>
+        <div class="floating-sphere sphere-2"></div>
+        <div class="floating-sphere sphere-3"></div>
+    </div>
+    
+    <nav class="navbar">
+        <div class="nav-brand">
+            <img src="/static/img/logo.png" alt="SynergySphere Logo" class="nav-logo">
+            SynergySphere
+        </div>
+        <div class="nav-menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/projects">Projects</a>
+            <a href="/tasks" style="color: var(--accent);">Tasks</a>
+            <a href="/profile">Profile</a>
+            <a href="#" onclick="logout()" class="btn-outline">Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1>Task Board</h1>
+            <button class="btn-primary" onclick="openCreateTaskModal()">+ New Task</button>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 2rem; display: flex; gap: 1rem; max-width: 800px;">
+            <select id="projectFilter" onchange="filterTasks()">
+                <option value="">All Projects</option>
+            </select>
+            <select id="assigneeFilter" onchange="filterTasks()">
+                <option value="">All Assignees</option>
+                <option value="me">My Tasks</option>
+            </select>
+            <select id="priorityFilter" onchange="filterTasks()">
+                <option value="">All Priorities</option>
+                <option value="high">High Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="low">Low Priority</option>
+            </select>
+            <button class="btn-outline" onclick="clearFilters()">Clear Filters</button>
+        </div>
+
+        <div class="tasks-board">
+            <div class="task-column">
+                <h4>📋 To Do <span id="todoCount" style="background: var(--gray); color: var(--light); padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-left: 0.5rem;">0</span></h4>
+                <div class="task-list" id="todoList" data-status="todo"></div>
+            </div>
+            <div class="task-column">
+                <h4>⏳ In Progress <span id="progressCount" style="background: var(--gray); color: var(--light); padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-left: 0.5rem;">0</span></h4>
+                <div class="task-list" id="progressList" data-status="in_progress"></div>
+            </div>
+            <div class="task-column">
+                <h4>✅ Done <span id="doneCount" style="background: var(--gray); color: var(--light); padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-left: 0.5rem;">0</span></h4>
+                <div class="task-list" id="doneList" data-status="done"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="createTaskModal">
+        <div class="modal-content">
+            <h3>Create New Task</h3>
+            <form id="createTaskForm">
+                <div class="form-group">
+                    <select id="taskProject" required>
+                        <option value="">Select Project</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="taskTitle" placeholder="Task Title" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="taskDescription" placeholder="Task Description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <select id="taskPriority">
+                        <option value="low">Low Priority</option>
+                        <option value="medium" selected>Medium Priority</option>
+                        <option value="high">High Priority</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="date" id="taskDueDate">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-outline" onclick="closeCreateTaskModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/notifications.js"></script>
+    <script>
+        let allTasks = [];
+        let projects = [];
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProjects();
+            loadAllTasks();
+            setupDragAndDrop();
+        });
+
+        async function loadProjects() {
+            try {
+                const response = await fetch('/api/projects', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    projects = data.projects;
+                    populateProjectFilters();
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+            }
+        }
+
+        function populateProjectFilters() {
+            const projectFilter = document.getElementById('projectFilter');
+            const taskProjectSelect = document.getElementById('taskProject');
+            
+            projects.forEach(project => {
+                projectFilter.innerHTML += `<option value="${project.id}">${project.name}</option>`;
+                taskProjectSelect.innerHTML += `<option value="${project.id}">${project.name}</option>`;
+            });
+        }
+
+        async function loadAllTasks() {
+            try {
+                // Load tasks from all projects
+                const taskPromises = projects.map(project => 
+                    fetch(`/api/projects/${project.id}/tasks`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    })
+                );
+
+                const responses = await Promise.all(taskPromises);
+                allTasks = [];
+
+                for (const response of responses) {
+                    if (response.ok) {
+                        const data = await response.json();
+                        allTasks = allTasks.concat(data.tasks || []);
+                    }
+                }
+
+                displayTasks(allTasks);
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
+        function displayTasks(tasks) {
+            const todoList = document.getElementById('todoList');
+            const progressList = document.getElementById('progressList');
+            const doneList = document.getElementById('doneList');
+
+            // Clear existing tasks
+            todoList.innerHTML = '';
+            progressList.innerHTML = '';
+            doneList.innerHTML = '';
+
+            // Count tasks by status
+            let todoCount = 0, progressCount = 0, doneCount = 0;
+
+            tasks.forEach(task => {
+                const taskCard = createTaskCard(task);
+                
+                if (task.status === 'todo') {
+                    todoList.appendChild(taskCard);
+                    todoCount++;
+                } else if (task.status === 'in_progress') {
+                    progressList.appendChild(taskCard);
+                    progressCount++;
+                } else if (task.status === 'done') {
+                    doneList.appendChild(taskCard);
+                    doneCount++;
+                }
+            });
+
+            // Update counts
+            document.getElementById('todoCount').textContent = todoCount;
+            document.getElementById('progressCount').textContent = progressCount;
+            document.getElementById('doneCount').textContent = doneCount;
+
+            // Add empty states
+            if (todoCount === 0) {
+                todoList.innerHTML = '<div class="empty-column">No tasks to do</div>';
+            }
+            if (progressCount === 0) {
+                progressList.innerHTML = '<div class="empty-column">No tasks in progress</div>';
+            }
+            if (doneCount === 0) {
+                doneList.innerHTML = '<div class="empty-column">No completed tasks</div>';
+            }
+        }
+
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            card.draggable = true;
+            card.dataset.taskId = task.id;
+            card.dataset.projectId = task.project_id;
+            
+            const dueDate = task.due_date ? new Date(task.due_date) : null;
+            const isOverdue = dueDate && dueDate < new Date() && task.status !== 'done';
+            const priorityEmoji = task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢';
+            
+            card.innerHTML = `
+                <div class="task-header">
+                    <h4>${task.title}</h4>
+                    <span>${priorityEmoji}</span>
+                </div>
+                ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+                <div class="task-meta">
+                    <div class="assignee">${task.assignee_name || 'Unassigned'}</div>
+                    ${dueDate ? `<div class="due-date ${isOverdue ? 'overdue' : ''}">${dueDate.toLocaleDateString()}</div>` : ''}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function setupDragAndDrop() {
+            const taskLists = document.querySelectorAll('.task-list');
+            
+            taskLists.forEach(list => {
+                list.addEventListener('dragover', handleDragOver);
+                list.addEventListener('drop', handleDrop);
+                list.addEventListener('dragleave', handleDragLeave);
+            });
+            
+            document.addEventListener('dragstart', handleDragStart);
+            document.addEventListener('dragend', handleDragEnd);
+        }
+
+        let draggedElement = null;
+
+        function handleDragStart(e) {
+            if (e.target.classList.contains('task-card')) {
+                draggedElement = e.target;
+                e.target.classList.add('dragging');
+            }
+        }
+
+        function handleDragEnd(e) {
+            if (e.target.classList.contains('task-card')) {
+                e.target.classList.remove('dragging');
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        async function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            if (draggedElement && e.currentTarget.classList.contains('task-list')) {
+                const newStatus = e.currentTarget.dataset.status;
+                const taskId = draggedElement.dataset.taskId;
+                const projectId = draggedElement.dataset.projectId;
+                
+                // Update task status via API
+                try {
+                    const response = await fetch(`/api/tasks/${taskId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+                    
+                    if (response.ok) {
+                        // Move the card to the new column
+                        e.currentTarget.appendChild(draggedElement);
+                        
+                        // Update counts
+                        updateColumnCounts();
+                        
+                        // Show notification
+                        if (window.notifications) {
+                            const taskTitle = draggedElement.querySelector('h4').textContent;
+                            window.notifications.taskUpdated(taskTitle, newStatus);
+                        }
+                    } else {
+                        const errorMsg = 'Failed to update task status';
+                        if (window.notifications) {
+                            window.notifications.error(errorMsg);
+                        } else {
+                            alert(errorMsg);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error updating task:', error);
+                    const errorMsg = 'Failed to update task';
+                    if (window.notifications) {
+                        window.notifications.error(errorMsg);
+                    } else {
+                        alert(errorMsg);
+                    }
+                }
+            }
+        }
+
+        function updateColumnCounts() {
+            const todoCount = document.querySelectorAll('#todoList .task-card').length;
+            const progressCount = document.querySelectorAll('#progressList .task-card').length;
+            const doneCount = document.querySelectorAll('#doneList .task-card').length;
+            
+            document.getElementById('todoCount').textContent = todoCount;
+            document.getElementById('progressCount').textContent = progressCount;
+            document.getElementById('doneCount').textContent = doneCount;
+        }
+
+        function openCreateTaskModal() {
+            document.getElementById('createTaskModal').style.display = 'flex';
+        }
+        
+        function closeCreateTaskModal() {
+            document.getElementById('createTaskModal').style.display = 'none';
+            document.getElementById('createTaskForm').reset();
+        }
+
+        // Handle form submission
+        document.getElementById('createTaskForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const projectId = document.getElementById('taskProject').value;
+            const title = document.getElementById('taskTitle').value;
+            const description = document.getElementById('taskDescription').value;
+            const priority = document.getElementById('taskPriority').value;
+            const dueDate = document.getElementById('taskDueDate').value;
+
+            if (!projectId || !title.trim()) {
+                if (window.notifications) {
+                    window.notifications.error('Please select a project and enter a title');
+                } else {
+                    alert('Please select a project and enter a title');
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/projects/${projectId}/tasks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title,
+                        description,
+                        priority,
+                        due_date: dueDate || null,
+                        status: 'todo'
+                    })
+                });
+
+                if (response.ok) {
+                    closeCreateTaskModal();
+                    loadAllTasks();
+                    if (window.notifications) {
+                        window.notifications.success(`Task "${title}" created successfully!`);
+                    }
+                } else {
+                    const error = await response.json();
+                    const errorMsg = error.error || 'Failed to create task';
+                    if (window.notifications) {
+                        window.notifications.error(errorMsg);
+                    } else {
+                        alert(errorMsg);
+                    }
+                }
+            } catch (error) {
+                console.error('Error creating task:', error);
+                const errorMsg = 'Failed to create task';
+                if (window.notifications) {
+                    window.notifications.error(errorMsg);
+                } else {
+                    alert(errorMsg);
+                }
+            }
+        });
+
+        function filterTasks() {
+            const projectFilter = document.getElementById('projectFilter').value;
+            const assigneeFilter = document.getElementById('assigneeFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            
+            let filteredTasks = allTasks;
+            
+            if (projectFilter) {
+                filteredTasks = filteredTasks.filter(task => task.project_id == projectFilter);
+            }
+            
+            if (assigneeFilter === 'me') {
+                // Filter for current user's tasks (would need user ID from auth)
+                // For now, we'll skip this filter
+            }
+            
+            if (priorityFilter) {
+                filteredTasks = filteredTasks.filter(task => task.priority === priorityFilter);
+            }
+            
+            displayTasks(filteredTasks);
+        }
+
+        function clearFilters() {
+            document.getElementById('projectFilter').value = '';
+            document.getElementById('assigneeFilter').value = '';
+            document.getElementById('priorityFilter').value = '';
+            displayTasks(allTasks);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('createTaskModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCreateTaskModal();
+            }
+        });
+    </script>
+</body>
+</html>

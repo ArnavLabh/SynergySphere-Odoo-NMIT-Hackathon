@@ -21,12 +21,16 @@ class StructuredFormatter(logging.Formatter):
         }
         
         # Add request context if available
-        if hasattr(g, 'request_id'):
-            log_entry['request_id'] = g.request_id
-        if request:
-            log_entry['endpoint'] = request.endpoint
-            log_entry['method'] = request.method
-            log_entry['ip'] = request.remote_addr
+        try:
+            if hasattr(g, 'request_id'):
+                log_entry['request_id'] = g.request_id
+            if request:
+                log_entry['endpoint'] = request.endpoint
+                log_entry['method'] = request.method
+                log_entry['ip'] = request.remote_addr
+        except RuntimeError:
+            # Outside of request context
+            pass
         
         # Add exception info if present
         if record.exc_info:

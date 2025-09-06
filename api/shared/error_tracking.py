@@ -29,8 +29,7 @@ def init_sentry(app):
     sentry_sdk.init(
         dsn=sentry_dsn,
         integrations=[
-            FlaskIntegration(auto_enabling_integrations=False),
-            SqlalchemyIntegration()
+            FlaskIntegration(),
         ],
         traces_sample_rate=0.1,
         environment=os.getenv('FLASK_ENV', 'production')

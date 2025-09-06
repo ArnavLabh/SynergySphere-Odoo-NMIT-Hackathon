@@ -30,7 +30,9 @@ class Tasks {
             this.renderTasks();
             this.updateProgress();
         } catch (error) {
-            this.showError('Failed to load tasks');
+            console.error('Failed to load tasks:', error);
+            this.tasks = [];
+            this.renderTasks();
         }
     }
 
@@ -152,9 +154,15 @@ class Tasks {
             // Update local task status
             const task = this.tasks.find(t => t.id == taskId);
             if (task) {
+                const oldStatus = task.status;
                 task.status = newStatus;
                 this.renderTasks();
                 this.updateProgress();
+                
+                // Show notification
+                if (window.notifications && oldStatus !== newStatus) {
+                    window.notifications.taskUpdated(task.title, newStatus);
+                }
             }
         } catch (error) {
             this.showError('Failed to update task status');
@@ -222,8 +230,17 @@ class Tasks {
             
             this.hideCreateModal();
             this.loadTasks(this.currentProjectId);
+            
+            // Show success notification
+            if (window.notifications) {
+                window.notifications.success(`Task "${title}" created successfully!`);
+            }
         } catch (error) {
-            this.showError(error.message || 'Failed to create task');
+            const errorMsg = error.message || 'Failed to create task';
+            this.showError(errorMsg);
+            if (window.notifications) {
+                window.notifications.error(errorMsg);
+            }
         }
     }
 
@@ -245,6 +262,11 @@ class Tasks {
         if (errorContainer) {
             errorContainer.textContent = message;
             errorContainer.style.display = 'block';
+        }
+        
+        // Show notification if available
+        if (window.notifications) {
+            window.notifications.error(message);
         } else {
             alert(message); // Fallback
         }

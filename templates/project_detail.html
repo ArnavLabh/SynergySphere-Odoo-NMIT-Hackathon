@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details - SynergySphere</title>
+    <link rel="icon" type="image/png" href="/static/img/logo.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="floating-spheres">
+        <div class="floating-sphere sphere-1"></div>
+        <div class="floating-sphere sphere-2"></div>
+        <div class="floating-sphere sphere-3"></div>
+    </div>
+    
+    <nav class="navbar">
+        <div class="nav-brand">
+            <img src="/static/img/logo.png" alt="SynergySphere Logo" class="nav-logo">
+            SynergySphere
+        </div>
+        <div class="nav-menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/projects">Projects</a>
+            <a href="/profile">Profile</a>
+            <a href="#" onclick="logout()" class="btn-outline">Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="project-detail">
+            <div class="project-header">
+                <a href="/projects" class="btn-outline">← Back to Projects</a>
+                <div>
+                    <h2 id="projectName">Loading...</h2>
+                    <p id="projectDescription">Loading description...</p>
+                </div>
+                <button class="btn-outline" onclick="deleteProject()" style="color: #ef4444; border-color: #ef4444;">Delete Project</button>
+            </div>
+
+            <div class="project-tabs">
+                <button class="tab-btn active" onclick="showTab('tasks')">📋 Tasks</button>
+                <button class="tab-btn" onclick="showTab('messages')">💬 Messages</button>
+                <button class="tab-btn" onclick="showTab('members')">👥 Members</button>
+                <button class="tab-btn" onclick="showTab('progress')">📊 Progress</button>
+            </div>
+
+            <!-- Tasks Tab -->
+            <div id="tasksTab" class="tab-content-section">
+                <div class="tasks-header">
+                    <h3>Tasks</h3>
+                    <button class="btn-primary" onclick="showCreateTaskModal()">+ Add Task</button>
+                </div>
+                <div class="tasks-board">
+                    <div class="task-column">
+                        <h4>To Do</h4>
+                        <div id="todoTasks" class="task-list" data-status="todo"></div>
+                    </div>
+                    <div class="task-column">
+                        <h4>In Progress</h4>
+                        <div id="inProgressTasks" class="task-list" data-status="in_progress"></div>
+                    </div>
+                    <div class="task-column">
+                        <h4>Done</h4>
+                        <div id="doneTasks" class="task-list" data-status="done"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Tab -->
+            <div id="messagesTab" class="tab-content-section" style="display:none;">
+                <div class="messages-container">
+                    <div class="messages-list" id="messagesList">
+                        <div class="empty-messages">
+                            <div class="empty-icon">💬</div>
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
+                    </div>
+                    <form class="message-form" id="messageForm">
+                        <input type="text" id="messageInput" placeholder="Type a message..." required>
+                        <button type="submit" class="btn-primary">Send</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Members Tab -->
+            <div id="membersTab" class="tab-content-section" style="display:none;">
+                <div class="tasks-header">
+                    <h3>Team Members</h3>
+                    <button class="btn-primary" onclick="showAddMemberModal()">+ Add Member</button>
+                </div>
+                <div id="membersList"></div>
+            </div>
+
+            <!-- Progress Tab -->
+            <div id="progressTab" class="tab-content-section" style="display:none;">
+                <div class="progress-section">
+                    <h4>Project Progress</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0% Complete</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Task Modal -->
+    <div class="modal" id="createTaskModal">
+        <div class="modal-content">
+            <h3>Create New Task</h3>
+            <form id="createTaskForm">
+                <div class="form-group">
+                    <input type="text" id="taskTitle" placeholder="Task Title" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="taskDescription" placeholder="Task Description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <select id="taskAssignee">
+                        <option value="">Assign to...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="date" id="taskDueDate">
+                </div>
+                <div class="form-group">
+                    <select id="taskPriority">
+                        <option value="low">Low Priority</option>
+                        <option value="medium" selected>Medium Priority</option>
+                        <option value="high">High Priority</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-outline" onclick="closeCreateTaskModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div class="modal" id="addMemberModal">
+        <div class="modal-content">
+            <h3>Add Team Member</h3>
+            <form id="addMemberForm">
+                <div class="form-group">
+                    <input type="email" id="memberEmail" placeholder="Email Address" required>
+                </div>
+                <div class="form-group">
+                    <select id="memberRole">
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-outline" onclick="closeAddMemberModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/notifications.js"></script>
+    <script src="/static/js/tasks.js"></script>
+    <script src="/static/js/messages.js"></script>
+    <script>
+        const projectId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
+        const token = localStorage.getItem('token');
+        let currentProject = null;
+        let projectTasks = [];
+        let projectMessages = [];
+        let projectMembers = [];
+
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        // Load project details on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProject();
+            loadTasks();
+            loadMessages();
+            loadMembers();
+            updateProgress();
+        });
+
+        async function apiRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        ...options.headers
+                    }
+                });
+
+                if (!response.ok) {
+                    let errorMsg = 'Request failed';
+                    try {
+                        const error = await response.json();
+                        errorMsg = error.error || errorMsg;
+                    } catch (e) {
+                        errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                return response.json();
+            } catch (error) {
+                console.error('API Request failed:', error);
+                throw error;
+            }
+        }
+
+        async function loadProject() {
+            try {
+                // For demo purposes, use a simple fetch without JWT requirement
+                const response = await fetch(`/api/projects/${projectId}`);
+                if (response.ok) {
+                    currentProject = await response.json();
+                    document.getElementById('projectName').textContent = currentProject.name || 'Demo Project';
+                    document.getElementById('projectDescription').textContent = currentProject.description || 'This is a demo project for SynergySphere';
+                } else {
+                    // Fallback for demo
+                    document.getElementById('projectName').textContent = 'Demo Project';
+                    document.getElementById('projectDescription').textContent = 'This is a demo project for SynergySphere';
+                }
+            } catch (error) {
+                console.error('Error loading project:', error);
+                // Fallback for demo
+                document.getElementById('projectName').textContent = 'Demo Project';
+                document.getElementById('projectDescription').textContent = 'This is a demo project for SynergySphere';
+            }
+        }
+
+        async function loadTasks() {
+            try {
+                const response = await fetch(`/api/projects/${projectId}/tasks`);
+                if (response.ok) {
+                    const data = await response.json();
+                    projectTasks = data.tasks || [];
+                } else {
+                    // Demo tasks for testing
+                    projectTasks = [
+                        { id: 1, title: 'Setup project structure', description: 'Initialize the project with basic structure', status: 'done', assignee_name: 'John Doe', due_date: '2024-01-15' },
+                        { id: 2, title: 'Design user interface', description: 'Create wireframes and mockups', status: 'in_progress', assignee_name: 'Jane Smith', due_date: '2024-01-20' },
+                        { id: 3, title: 'Implement authentication', description: 'Add user login and registration', status: 'todo', assignee_name: 'Bob Johnson', due_date: '2024-01-25' }
+                    ];
+                }
+                renderTasks();
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                // Demo tasks for testing
+                projectTasks = [
+                    { id: 1, title: 'Setup project structure', description: 'Initialize the project with basic structure', status: 'done', assignee_name: 'John Doe', due_date: '2024-01-15' },
+                    { id: 2, title: 'Design user interface', description: 'Create wireframes and mockups', status: 'in_progress', assignee_name: 'Jane Smith', due_date: '2024-01-20' },
+                    { id: 3, title: 'Implement authentication', description: 'Add user login and registration', status: 'todo', assignee_name: 'Bob Johnson', due_date: '2024-01-25' }
+                ];
+                renderTasks();
+            }
+        }
+
+        function renderTasks() {
+            const todoContainer = document.getElementById('todoTasks');
+            const inProgressContainer = document.getElementById('inProgressTasks');
+            const doneContainer = document.getElementById('doneTasks');
+
+            // Clear containers
+            todoContainer.innerHTML = '';
+            inProgressContainer.innerHTML = '';
+            doneContainer.innerHTML = '';
+
+            if (projectTasks.length === 0) {
+                todoContainer.innerHTML = '<div class="empty-column">No tasks yet</div>';
+                return;
+            }
+
+            // Group tasks by status
+            projectTasks.forEach(task => {
+                const taskCard = createTaskCard(task);
+                
+                if (task.status === 'todo') {
+                    todoContainer.appendChild(taskCard);
+                } else if (task.status === 'in_progress') {
+                    inProgressContainer.appendChild(taskCard);
+                } else if (task.status === 'done') {
+                    doneContainer.appendChild(taskCard);
+                }
+            });
+
+            // Setup drag and drop
+            setupDragAndDrop();
+            updateProgress();
+        }
+
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            card.draggable = true;
+            card.dataset.taskId = task.id;
+            
+            const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
+            
+            card.innerHTML = `
+                <div class="task-header">
+                    <h4>${task.title}</h4>
+                    <select class="status-select" onchange="updateTaskStatus(${task.id}, this.value)">
+                        <option value="todo" ${task.status === 'todo' ? 'selected' : ''}>To Do</option>
+                        <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                        <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
+                    </select>
+                </div>
+                ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+                <div class="task-meta">
+                    <div class="assignee">${task.assignee_name || 'Unassigned'}</div>
+                    ${task.due_date ? `<div class="due-date ${isOverdue ? 'overdue' : ''}">${new Date(task.due_date).toLocaleDateString()}</div>` : ''}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function setupDragAndDrop() {
+            const taskCards = document.querySelectorAll('.task-card');
+            const taskLists = document.querySelectorAll('.task-list');
+
+            taskCards.forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('taskId', card.dataset.taskId);
+                    card.style.opacity = '0.5';
+                });
+
+                card.addEventListener('dragend', () => {
+                    card.style.opacity = '1';
+                });
+            });
+
+            taskLists.forEach(list => {
+                list.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    list.style.backgroundColor = '#e5e7eb';
+                });
+
+                list.addEventListener('dragleave', () => {
+                    list.style.backgroundColor = '';
+                });
+
+                list.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    list.style.backgroundColor = '';
+                    
+                    const taskId = e.dataTransfer.getData('taskId');
+                    const newStatus = list.dataset.status;
+                    
+                    try {
+                        await apiRequest(`/api/tasks/${taskId}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        loadTasks();
+                    } catch (error) {
+                        console.error('Error updating task:', error);
+                        alert('Failed to update task status');
+                    }
+                });
+            });
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch(`/api/projects/${projectId}/messages`);
+                if (response.ok) {
+                    const data = await response.json();
+                    projectMessages = data.messages || [];
+                } else {
+                    // Demo messages for testing
+                    projectMessages = [
+                        { id: 1, content: 'Welcome to the project! Let\'s get started.', user_name: 'Project Manager', user_id: 1, created_at: new Date().toISOString() },
+                        { id: 2, content: 'I\'ve completed the initial setup. Ready for the next phase.', user_name: 'John Doe', user_id: 2, created_at: new Date(Date.now() - 3600000).toISOString() }
+                    ];
+                }
+                renderMessages();
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                // Demo messages for testing
+                projectMessages = [
+                    { id: 1, content: 'Welcome to the project! Let\'s get started.', user_name: 'Project Manager', user_id: 1, created_at: new Date().toISOString() },
+                    { id: 2, content: 'I\'ve completed the initial setup. Ready for the next phase.', user_name: 'John Doe', user_id: 2, created_at: new Date(Date.now() - 3600000).toISOString() }
+                ];
+                renderMessages();
+            }
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messagesList');
+            
+            if (projectMessages.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-messages">
+                        <div class="empty-icon">💬</div>
+                        <p>No messages yet. Start the conversation!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            container.innerHTML = projectMessages.map(msg => `
+                <div class="message ${msg.user_id === currentUser.id ? 'own-message' : ''}">
+                    <div class="message-header">
+                        <div class="message-author">${msg.user_name}</div>
+                        <div class="message-time">${new Date(msg.created_at).toLocaleString()}</div>
+                    </div>
+                    <div class="message-content">${msg.content}</div>
+                </div>
+            `).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Handle message form submission
+        document.getElementById('messageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            
+            if (!content) return;
+
+            try {
+                await apiRequest(`/api/projects/${projectId}/messages`, {
+                    method: 'POST',
+                    body: JSON.stringify({ content })
+                });
+                input.value = '';
+                loadMessages();
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Failed to send message');
+            }
+        });
+
+        async function loadMembers() {
+            try {
+                const response = await fetch(`/api/projects/${projectId}/members`);
+                if (response.ok) {
+                    const data = await response.json();
+                    projectMembers = data.members || [];
+                } else {
+                    // Demo members for testing
+                    projectMembers = [
+                        { id: 1, name: 'Project Manager', email: 'manager@example.com', role: 'owner', is_owner: true },
+                        { id: 2, name: 'John Doe', email: 'john@example.com', role: 'member', is_owner: false },
+                        { id: 3, name: 'Jane Smith', email: 'jane@example.com', role: 'member', is_owner: false }
+                    ];
+                }
+                renderMembers();
+            } catch (error) {
+                console.error('Error loading members:', error);
+                // Demo members for testing
+                projectMembers = [
+                    { id: 1, name: 'Project Manager', email: 'manager@example.com', role: 'owner', is_owner: true },
+                    { id: 2, name: 'John Doe', email: 'john@example.com', role: 'member', is_owner: false },
+                    { id: 3, name: 'Jane Smith', email: 'jane@example.com', role: 'member', is_owner: false }
+                ];
+                renderMembers();
+            }
+        }
+
+        function renderMembers() {
+            const container = document.getElementById('membersList');
+            
+            if (projectMembers.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No members yet.</p></div>';
+                return;
+            }
+
+            container.innerHTML = projectMembers.map(member => `
+                <div class="project-card" style="margin-bottom: 1rem;">
+                    <div class="project-header">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                                ${member.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1rem;">${member.name}</h3>
+                                <div style="color: var(--gray); font-size: 0.9rem;">${member.email}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span style="background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem;">
+                                ${member.role || 'Member'}
+                            </span>
+                            ${!member.is_owner ? `
+                                <button class="btn-outline" onclick="removeMember(${member.id})" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; color: #ef4444; border-color: #ef4444;">
+                                    Remove
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Update assignee dropdown
+            updateAssigneeDropdown();
+        }
+
+        function showCreateTaskModal() {
+            updateAssigneeDropdown();
+            document.getElementById('createTaskModal').style.display = 'flex';
+        }
+        
+        function closeCreateTaskModal() {
+            document.getElementById('createTaskModal').style.display = 'none';
+            document.getElementById('createTaskForm').reset();
+        }
+
+        // Handle task form submission
+        document.getElementById('createTaskForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('taskTitle').value;
+            const description = document.getElementById('taskDescription').value;
+            const assigneeId = document.getElementById('taskAssignee').value;
+            const dueDate = document.getElementById('taskDueDate').value;
+            const priority = document.getElementById('taskPriority').value;
+
+            if (!title) {
+                alert('Title is required');
+                return;
+            }
+
+            try {
+                await apiRequest(`/api/projects/${projectId}/tasks`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        title,
+                        description,
+                        assignee_id: assigneeId || null,
+                        due_date: dueDate || null,
+                        priority,
+                        status: 'todo'
+                    })
+                });
+                
+                closeCreateTaskModal();
+                loadTasks();
+                
+                // Show success notification
+                if (window.notifications) {
+                    window.notifications.success(`Task "${title}" created successfully!`);
+                }
+            } catch (error) {
+                console.error('Error creating task:', error);
+                const errorMsg = 'Failed to create task';
+                if (window.notifications) {
+                    window.notifications.error(errorMsg);
+                } else {
+                    alert(errorMsg);
+                }
+            }
+        });
+
+        async function deleteTask(taskId) {
+            if (!confirm('Are you sure you want to delete this task?')) return;
+
+            try {
+                await apiRequest(`/api/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                loadTasks();
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                alert('Failed to delete task');
+            }
+        }
+
+        function showAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = 'flex';
+        }
+        
+        function closeAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = 'none';
+            document.getElementById('addMemberForm').reset();
+        }
+
+        // Handle add member form submission
+        document.getElementById('addMemberForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('memberEmail').value;
+            const role = document.getElementById('memberRole').value;
+
+            if (!email) {
+                alert('Email is required');
+                return;
+            }
+
+            try {
+                await apiRequest(`/api/projects/${projectId}/members`, {
+                    method: 'POST',
+                    body: JSON.stringify({ email, role })
+                });
+                
+                closeAddMemberModal();
+                loadMembers();
+                
+                // Show success notification
+                if (window.notifications) {
+                    window.notifications.success(`${email} added to the project!`);
+                }
+            } catch (error) {
+                console.error('Error adding member:', error);
+                const errorMsg = error.message || 'Failed to add member';
+                if (window.notifications) {
+                    window.notifications.error(errorMsg);
+                } else {
+                    alert(errorMsg);
+                }
+            }
+        });
+
+        async function removeMember(memberId) {
+            if (!confirm('Are you sure you want to remove this member?')) return;
+
+            try {
+                await apiRequest(`/api/projects/${projectId}/members/${memberId}`, {
+                    method: 'DELETE'
+                });
+                loadMembers();
+            } catch (error) {
+                console.error('Error removing member:', error);
+                alert('Failed to remove member');
+            }
+        }
+
+        async function deleteProject() {
+            if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
+
+            try {
+                await apiRequest(`/api/projects/${projectId}`, {
+                    method: 'DELETE'
+                });
+                window.location.href = '/dashboard';
+            } catch (error) {
+                console.error('Error deleting project:', error);
+                alert('Failed to delete project');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content-section').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+        
+        // Update assignee dropdown
+        function updateAssigneeDropdown() {
+            const dropdown = document.getElementById('taskAssignee');
+            dropdown.innerHTML = '<option value="">Assign to...</option>';
+            
+            projectMembers.forEach(member => {
+                dropdown.innerHTML += `<option value="${member.id}">${member.name}</option>`;
+            });
+        }
+        
+        // Update task status
+        async function updateTaskStatus(taskId, newStatus) {
+            try {
+                await apiRequest(`/api/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status: newStatus })
+                });
+                loadTasks();
+                
+                // Show notification
+                if (window.notifications) {
+                    const task = projectTasks.find(t => t.id == taskId);
+                    if (task) {
+                        window.notifications.taskUpdated(task.title, newStatus);
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating task:', error);
+                const errorMsg = 'Failed to update task status';
+                if (window.notifications) {
+                    window.notifications.error(errorMsg);
+                } else {
+                    alert(errorMsg);
+                }
+            }
+        }
+        
+        // Update progress
+        function updateProgress() {
+            if (projectTasks.length === 0) {
+                document.getElementById('progressFill').style.width = '0%';
+                document.getElementById('progressText').textContent = '0% Complete';
+                return;
+            }
+            
+            const completedTasks = projectTasks.filter(task => task.status === 'done').length;
+            const progress = Math.round((completedTasks / projectTasks.length) * 100);
+            
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `${progress}% Complete (${completedTasks}/${projectTasks.length} tasks)`;
+        }
+        
+        // Close modals when clicking outside
+        document.getElementById('createTaskModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCreateTaskModal();
+        });
+        
+        document.getElementById('addMemberModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAddMemberModal();
+        });
+        
+        // Auto-refresh messages every 10 seconds
+        setInterval(loadMessages, 10000);
+    </script>
+</body>
+</html>

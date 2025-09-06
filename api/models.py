@@ -70,3 +70,25 @@ class Message(db.Model):
         db.Index('ix_message_project_created', 'project_id', 'created_at'),
         db.Index('ix_message_thread', 'parent_id', 'created_at'),
     )
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    type = db.Column(db.String(50), nullable=False, index=True)  # task_assigned, task_due, project_added, etc.
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    related_project_id = db.Column(db.Integer, db.ForeignKey('project.id'), index=True)
+    related_task_id = db.Column(db.Integer, db.ForeignKey('task.id'), index=True)
+    is_read = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=utc_now, index=True)
+    read_at = db.Column(db.DateTime)
+    
+    # Relationships
+    user = db.relationship('User', backref='notifications', lazy='joined')
+    project = db.relationship('Project', backref='notifications', lazy='joined')
+    task = db.relationship('Task', backref='notifications', lazy='joined')
+    
+    __table_args__ = (
+        db.Index('ix_notification_user_unread', 'user_id', 'is_read', 'created_at'),
+        db.Index('ix_notification_user_created', 'user_id', 'created_at'),
+    )

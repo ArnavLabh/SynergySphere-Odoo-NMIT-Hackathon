@@ -32,7 +32,9 @@ class Messages {
             this.renderMessages();
             this.startPolling();
         } catch (error) {
-            this.showError('Failed to load messages');
+            console.error('Failed to load messages:', error);
+            this.messages = [];
+            this.renderMessages();
         }
     }
 
@@ -90,8 +92,17 @@ class Messages {
             
             messageInput.value = '';
             this.loadMessages(this.currentProjectId);
+            
+            // Show success notification
+            if (window.notifications) {
+                window.notifications.success('Message sent!');
+            }
         } catch (error) {
-            this.showError(error.message || 'Failed to send message');
+            const errorMsg = error.message || 'Failed to send message';
+            this.showError(errorMsg);
+            if (window.notifications) {
+                window.notifications.error(errorMsg);
+            }
         }
     }
 
@@ -138,7 +149,11 @@ class Messages {
     }
 
     showError(message) {
-        alert(message);
+        if (window.notifications) {
+            window.notifications.error(message);
+        } else {
+            alert(message);
+        }
     }
 }
 
